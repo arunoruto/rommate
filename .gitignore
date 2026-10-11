@@ -1,10 +1,45 @@
-# devenv
+# ── Build output ─────────────────────────────────────────────────────────────
+/dist/
+/rommate
+*.exe
+*.test
+*.out
+*.prof
+*.pprof
+coverage.*
+
+# Go workspace files (local multi-module setups)
+go.work
+go.work.sum
+
+# ── devenv / direnv / nix ────────────────────────────────────────────────────
 .devenv*
 devenv.local.nix
 devenv.local.yaml
-.direnv
+.direnv/
 .pre-commit-config.yaml
+result
+result-*
 
-# build output
-/dist/
-/rommate
+# ── Local configuration & secrets ────────────────────────────────────────────
+# rommate reads ~/.config/rommate/config.toml, but keep stray copies of
+# configs or env files with tokens out of the repo.
+config.toml
+.env
+.env.*
+!.env.example
+
+# ── Editors & IDEs ───────────────────────────────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+.helix/
+
+# ── OS clutter ───────────────────────────────────────────────────────────────
+.DS_Store
+._*
+Thumbs.db

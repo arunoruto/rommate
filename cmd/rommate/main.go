@@ -24,6 +24,13 @@ import (
 	"github.com/arunoruto/rommate/internal/tui"
 )
 
+// Set at build time via -ldflags (see the justfile).
+var (
+	version = "dev"
+	commit  = "unknown"
+	date    = "unknown"
+)
+
 const usage = `rommate - sync games from RomM to your handheld
 
 Usage:
@@ -35,6 +42,7 @@ Usage:
   rommate pull --platform <p>     download every missing game of a platform
   rommate remove <rom-id>...      delete downloaded games
   rommate status                  show downloaded games
+  rommate version                 print version information
 
 Every command accepts --json to print machine-readable output (JSON lines for
 pull progress), e.g. for scripts or a Decky plugin.
@@ -74,6 +82,9 @@ func run(ctx context.Context, args []string) error {
 		return cmdRemove(ctx, rest)
 	case "status":
 		return cmdStatus(rest)
+	case "version", "--version", "-v":
+		fmt.Printf("rommate %s (commit %s, built %s)\n", version, commit, date)
+		return nil
 	case "help", "-h", "--help":
 		fmt.Print(usage)
 		return nil

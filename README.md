@@ -87,11 +87,11 @@ Build the binary for your device (see [Development](#development)) and copy it o
 
 ```sh
 # Armada and other ARM handhelds
-GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o rommate ./cmd/rommate
-scp rommate armada@armada.local:.local/bin/
+just build-target linux arm64     # → dist/rommate-linux-arm64
+just deploy armada@armada.local   # build + copy in one step
 
 # Steam Deck / Steam Machine
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o rommate ./cmd/rommate
+just build-target linux amd64     # → dist/rommate-linux-amd64
 ```
 
 ### Configuration
@@ -183,18 +183,22 @@ Event types: `start`, `progress`, `done`, `skipped`, `error`.
 
 ## Development
 
-The repository includes a [devenv](https://devenv.sh) shell with Go, gopls, golangci-lint, delve, nixd and taplo,
-plus gofmt, govet and nixfmt git hooks:
+The repository includes a [devenv](https://devenv.sh) shell with Go, gopls, golangci-lint, delve, just, nixd and taplo,
+plus gofmt, govet and nixfmt git hooks. All common tasks are [just](https://just.systems) recipes:
 
 ```sh
-direnv allow        # or: devenv shell
-go test ./...
-golangci-lint run ./...
+direnv allow                    # or: devenv shell
+just                            # list all recipes
 
-build               # → dist/rommate (current machine)
-build-arm64         # → dist/rommate-linux-arm64
-build-amd64         # → dist/rommate-linux-amd64
-deploy              # build-arm64 + scp to armada@armada.local (or: deploy user@host)
+just build                      # → dist/rommate (current machine)
+just build-target linux arm64   # → dist/rommate-linux-arm64
+just build-all                  # every release target
+just run platforms              # go run with arguments
+just deploy                     # build for arm64 + copy to armada@armada.local (or: just deploy user@host)
+
+just test                       # unit tests
+just check                      # what CI runs: fmt, tidy, vet, lint, tests
+just package                    # release archives + checksums → dist/release
 ```
 
 Project layout:
