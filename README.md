@@ -9,6 +9,10 @@
 
 <br />
 <div align="center">
+  <a href="https://github.com/arunoruto/rommate">
+    <img src="assets/logo.svg" alt="rommate logo" width="112" height="112">
+  </a>
+
 <h3 align="center">rommate</h3>
 
   <p align="center">
