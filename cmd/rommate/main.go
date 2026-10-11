@@ -1,0 +1,421 @@
+// Command rommate syncs games from a RomM server to a handheld.
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"os"
+	"os/signal"
+	"strconv"
+	"strings"
+	"syscall"
+	"text/tabwriter"
+
+	"github.com/dustin/go-humanize"
+
+	"github.com/arunoruto/rommate/internal/config"
+	"github.com/arunoruto/rommate/internal/core"
+	"github.com/arunoruto/rommate/internal/folders"
+	"github.com/arunoruto/rommate/internal/romm"
+	"github.com/arunoruto/rommate/internal/state"
+	"github.com/arunoruto/rommate/internal/tui"
+)
+
+const usage = `rommate - sync games from RomM to your handheld
+
+Usage:
+  rommate                         open the TUI
+  rommate init --server URL --token rmm_... [--profile es-de|emudeck|retrodeck] [--rom-dir DIR]
+  rommate platforms               list platforms and their local folders
+  rommate roms <platform>         list a platform's games (slug or id)
+  rommate pull <rom-id>...        download games
+  rommate pull --platform <p>     download every missing game of a platform
+  rommate remove <rom-id>...      delete downloaded games
+  rommate status                  show downloaded games
+
+Every command accepts --json to print machine-readable output (JSON lines for
+pull progress), e.g. for scripts or a Decky plugin.
+`
+
+func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	if err := run(ctx, os.Args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, "rommate:", err)
+		os.Exit(1)
+	}
+}
+
+func run(ctx context.Context, args []string) error {
+	if len(args) == 0 {
+		return withEngine(func(e *core.Engine, cfg *config.Config) error {
+			return tui.Run(ctx, e, tui.Options{Hints: cfg.Hints})
+		})
+	}
+	cmd, rest := args[0], args[1:]
+	switch cmd {
+	case "tui":
+		return withEngine(func(e *core.Engine, cfg *config.Config) error {
+			return tui.Run(ctx, e, tui.Options{Hints: cfg.Hints})
+		})
+	case "init":
+		return cmdInit(rest)
+	case "platforms":
+		return cmdPlatforms(ctx, rest)
+	case "roms":
+		return cmdRoms(ctx, rest)
+	case "pull":
+		return cmdPull(ctx, rest)
+	case "remove", "rm":
+		return cmdRemove(ctx, rest)
+	case "status":
+		return cmdStatus(rest)
+	case "help", "-h", "--help":
+		fmt.Print(usage)
+		return nil
+	default:
+		return fmt.Errorf("unknown command %q\n\n%s", cmd, usage)
+	}
+}
+
+// withEngine loads config, opens state and builds the engine.
+func withEngine(fn func(*core.Engine, *config.Config) error) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+	if err := cfg.Validate(); err != nil {
+		return fmt.Errorf("%w\nrun `rommate init --server URL --token rmm_...` first", err)
+	}
+	dataDir, err := config.DataDir()
+	if err != nil {
+		return err
+	}
+	store, err := state.Open(dataDir)
+	if err != nil {
+		return err
+	}
+	defer store.Close()
+	return fn(&core.Engine{
+		Client: romm.New(cfg.Server, cfg.Token),
+		Mapper: cfg.Mapper(),
+		Store:  store,
+	}, cfg)
+}
+
+func newFlags(name string) (*flag.FlagSet, *bool) {
+	fs := flag.NewFlagSet(name, flag.ContinueOnError)
+	asJSON := fs.Bool("json", false, "print JSON output")
+	return fs, asJSON
+}
+
+// parse parses flags anywhere in args (the flag package stops at the first
+// positional argument, which would break `rommate roms nes --json`).
+func parse(fs *flag.FlagSet, args []string) ([]string, error) {
+	var pos []string
+	for {
+		if err := fs.Parse(args); err != nil {
+			return nil, err
+		}
+		args = fs.Args()
+		if len(args) == 0 {
+			return pos, nil
+		}
+		if args[0] == "--" {
+			return append(pos, args[1:]...), nil
+		}
+		pos = append(pos, args[0])
+		args = args[1:]
+	}
+}
+
+func printJSON(v any) error {
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(v)
+}
+
+func cmdInit(args []string) error {
+	fs := flag.NewFlagSet("init", flag.ContinueOnError)
+	server := fs.String("server", "", "RomM server URL")
+	token := fs.String("token", "", "RomM Client API Token (rmm_...)")
+	profile := fs.String("profile", "", "es-de, emudeck or retrodeck")
+	romDir := fs.String("rom-dir", "", "ROM root directory (default: from profile)")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(pos) > 0 {
+		return fmt.Errorf("%s takes no arguments, got %q", "init", pos)
+	}
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+	if *server != "" {
+		cfg.Server = strings.TrimRight(*server, "/")
+	}
+	if *token != "" {
+		cfg.Token = *token
+	}
+	if *profile != "" {
+		cfg.Profile = folders.Profile(*profile)
+	}
+	if *romDir != "" {
+		cfg.ROMDir = *romDir
+	}
+	if err := cfg.Validate(); err != nil {
+		return err
+	}
+	if _, err := romm.New(cfg.Server, cfg.Token).Platforms(context.Background()); err != nil {
+		return fmt.Errorf("could not reach RomM with these settings: %w", err)
+	}
+	if err := cfg.Save(); err != nil {
+		return err
+	}
+	path, _ := config.Path()
+	fmt.Printf("Saved %s\nROMs go to %s\n", path, cfg.Mapper().Root)
+	return nil
+}
+
+func cmdPlatforms(ctx context.Context, args []string) error {
+	fs, asJSON := newFlags("platforms")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(pos) > 0 {
+		return fmt.Errorf("%s takes no arguments, got %q", "platforms", pos)
+	}
+	return withEngine(func(e *core.Engine, _ *config.Config) error {
+		ps, err := e.Platforms(ctx)
+		if err != nil {
+			return err
+		}
+		if *asJSON {
+			return printJSON(ps)
+		}
+		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		fmt.Fprintln(tw, "ID\tSLUG\tNAME\tGAMES\tFOLDER")
+		for _, p := range ps {
+			fmt.Fprintf(tw, "%d\t%s\t%s\t%d\t%s\n", p.ID, p.Slug, p.DisplayName(), p.RomCount, p.Folder)
+		}
+		return tw.Flush()
+	})
+}
+
+// findPlatform resolves a platform by id or slug.
+func findPlatform(ctx context.Context, e *core.Engine, ref string) (core.PlatformInfo, error) {
+	ps, err := e.Platforms(ctx)
+	if err != nil {
+		return core.PlatformInfo{}, err
+	}
+	id, _ := strconv.Atoi(ref)
+	for _, p := range ps {
+		if p.ID == id || p.Slug == ref || p.FSSlug == ref || p.Folder == ref {
+			return p, nil
+		}
+	}
+	return core.PlatformInfo{}, fmt.Errorf("no platform %q with games on the server (see `rommate platforms`)", ref)
+}
+
+func cmdRoms(ctx context.Context, args []string) error {
+	fs, asJSON := newFlags("roms")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(pos) != 1 {
+		return errors.New("usage: rommate roms <platform>")
+	}
+	return withEngine(func(e *core.Engine, _ *config.Config) error {
+		p, err := findPlatform(ctx, e, pos[0])
+		if err != nil {
+			return err
+		}
+		roms, err := e.Roms(ctx, p.ID)
+		if err != nil {
+			return err
+		}
+		if *asJSON {
+			return printJSON(roms)
+		}
+		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		fmt.Fprintln(tw, "ID\t\tNAME\tSIZE")
+		for _, r := range roms {
+			mark := " "
+			if r.Installed {
+				mark = "✓"
+			}
+			fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", r.ID, mark, r.Title(), humanize.IBytes(uint64(r.FSSizeBytes)))
+		}
+		return tw.Flush()
+	})
+}
+
+func cmdPull(ctx context.Context, args []string) error {
+	fs, asJSON := newFlags("pull")
+	platform := fs.String("platform", "", "download every missing game of this platform")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if *platform == "" && len(pos) == 0 {
+		return errors.New("usage: rommate pull <rom-id> [rom-id ...] | --platform <platform>")
+	}
+	return withEngine(func(e *core.Engine, _ *config.Config) error {
+		var roms []romm.Rom
+		if *platform != "" {
+			p, err := findPlatform(ctx, e, *platform)
+			if err != nil {
+				return err
+			}
+			infos, err := e.Roms(ctx, p.ID)
+			if err != nil {
+				return err
+			}
+			for _, r := range infos {
+				if !r.Installed {
+					roms = append(roms, r.Rom)
+				}
+			}
+		}
+		for _, a := range pos {
+			id, err := strconv.Atoi(a)
+			if err != nil {
+				return fmt.Errorf("not a rom id: %q", a)
+			}
+			r, err := e.Client.Rom(ctx, id)
+			if err != nil {
+				return err
+			}
+			roms = append(roms, r)
+		}
+
+		emit := textEmitter()
+		if *asJSON {
+			enc := json.NewEncoder(os.Stdout)
+			emit = func(ev core.Event) { _ = enc.Encode(ev) }
+		}
+		var failed int
+		for _, r := range roms {
+			if err := e.Pull(ctx, r, emit); err != nil {
+				if ctx.Err() != nil {
+					return ctx.Err()
+				}
+				failed++
+			}
+		}
+		if failed > 0 {
+			return fmt.Errorf("%d of %d downloads failed", failed, len(roms))
+		}
+		return nil
+	})
+}
+
+// textEmitter prints human-readable progress, redrawing one line per game.
+func textEmitter() core.Emit {
+	tty := isTerminal(os.Stdout)
+	return func(ev core.Event) {
+		switch ev.Type {
+		case core.EventStart:
+			fmt.Printf("↓ %s (%s)\n", ev.Name, humanize.IBytes(uint64(ev.Total)))
+		case core.EventProgress:
+			if tty && ev.Total > 0 {
+				fmt.Printf("\r  %5.1f%%  %s / %s", float64(ev.Done)*100/float64(ev.Total),
+					humanize.IBytes(uint64(ev.Done)), humanize.IBytes(uint64(ev.Total)))
+			}
+		case core.EventDone:
+			if tty {
+				fmt.Print("\r\033[K")
+			}
+			fmt.Printf("✓ %s → %s\n", ev.Name, ev.Path)
+		case core.EventSkipped:
+			fmt.Printf("· %s already downloaded\n", ev.Name)
+		case core.EventError:
+			if tty {
+				fmt.Print("\r\033[K")
+			}
+			fmt.Fprintf(os.Stderr, "✗ %s: %s\n", ev.Name, ev.Error)
+		}
+	}
+}
+
+func isTerminal(f *os.File) bool {
+	st, err := f.Stat()
+	return err == nil && st.Mode()&os.ModeCharDevice != 0
+}
+
+func cmdRemove(ctx context.Context, args []string) error {
+	fs, asJSON := newFlags("remove")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(pos) == 0 {
+		return errors.New("usage: rommate remove <rom-id> [rom-id ...]")
+	}
+	return withEngine(func(e *core.Engine, _ *config.Config) error {
+		var removed []int
+		for _, a := range pos {
+			id, err := strconv.Atoi(a)
+			if err != nil {
+				return fmt.Errorf("not a rom id: %q", a)
+			}
+			r, err := e.Client.Rom(ctx, id)
+			if err != nil {
+				return err
+			}
+			if err := e.Remove(r); err != nil {
+				return err
+			}
+			removed = append(removed, id)
+			if !*asJSON {
+				fmt.Printf("removed %s\n", r.Title())
+			}
+		}
+		if *asJSON {
+			return printJSON(map[string]any{"removed": removed})
+		}
+		return nil
+	})
+}
+
+func cmdStatus(args []string) error {
+	fs, asJSON := newFlags("status")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(pos) > 0 {
+		return fmt.Errorf("%s takes no arguments, got %q", "status", pos)
+	}
+	return withEngine(func(e *core.Engine, _ *config.Config) error {
+		entries, err := e.Status()
+		if err != nil {
+			return err
+		}
+		if *asJSON {
+			return printJSON(entries)
+		}
+		if len(entries) == 0 {
+			fmt.Println("Nothing downloaded yet.")
+			return nil
+		}
+		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		fmt.Fprintln(tw, "ID\tPLATFORM\tNAME\tSIZE\tPATH")
+		for _, en := range entries {
+			path := en.Path
+			if !en.Present {
+				path += "  (missing!)"
+			}
+			fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\n", en.RomID, en.PlatformSlug, en.Name,
+				humanize.IBytes(uint64(en.SizeBytes)), path)
+		}
+		return tw.Flush()
+	})
+}

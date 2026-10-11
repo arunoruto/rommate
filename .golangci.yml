@@ -1,0 +1,15 @@
+version: "2"
+linters:
+  settings:
+    errcheck:
+      # Deferred Close on read paths is fine to ignore; writes are synced explicitly.
+      exclude-functions:
+        - (io.Closer).Close
+        - (*os.File).Close
+        - (*database/sql.DB).Close
+        - (*database/sql.Rows).Close
+        - (*github.com/arunoruto/rommate/internal/state.Store).Close
+        # Table output goes through tabwriter; errors surface on Flush.
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - fmt.Fprint
