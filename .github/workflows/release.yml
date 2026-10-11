@@ -1,0 +1,97 @@
+name: Release
+
+# Releases are cut manually: run this workflow from the Actions tab (or
+# `gh workflow run release.yml`). go-semantic-release derives the next version
+# from the Conventional Commits since the last release:
+#   fix: → patch, feat: → minor, BREAKING CHANGE / feat!: → major
+# While on 0.x, breaking changes bump the minor version.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Build and publish
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: extractions/setup-just@v4
+
+      # Dry run: only compute the next version and changelog. The release itself
+      # is created below, after the binaries built successfully.
+      - name: Determine next version
+        id: semrel
+        uses: go-semantic-release/action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          dry: true
+          allow-initial-development-versions: true
+
+      - name: Nothing to release
+        if: steps.semrel.outputs.version == ''
+        run: echo "::notice::No feat/fix/breaking commits since the last release, nothing to publish."
+
+      - name: Build release binaries
+        if: steps.semrel.outputs.version != ''
+        env:
+          VERSION: v${{ steps.semrel.outputs.version }}
+        run: just package
+
+      - name: Write release notes
+        if: steps.semrel.outputs.version != ''
+        env:
+          CHANGELOG: ${{ steps.semrel.outputs.changelog }}
+          REPO: ${{ github.repository }}
+        run: |
+          {
+            printf '%s\n\n' "$CHANGELOG"
+            cat <<NOTES
+          ## Install
+
+          | Platform | Asset |
+          |---|---|
+          | Linux ARM64 (Armada and other ARM handhelds) | \`rommate-linux-arm64\` |
+          | Linux x86-64 (Steam Deck, Steam Machine, PCs) | \`rommate-linux-amd64\` |
+          | macOS Apple Silicon | \`rommate-darwin-arm64\` |
+          | Windows x86-64 (untested) | \`rommate-windows-amd64.exe\` |
+
+          \`\`\`sh
+          curl -fL -o ~/.local/bin/rommate https://github.com/${REPO}/releases/latest/download/rommate-linux-arm64
+          chmod +x ~/.local/bin/rommate
+          \`\`\`
+
+          SHA-256 checksums are in \`checksums.txt\`.
+          NOTES
+          } > release-notes.md
+          cat release-notes.md
+
+      - name: Publish GitHub release
+        if: steps.semrel.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ steps.semrel.outputs.version }}
+        run: |
+          gh release create "$TAG" dist/release/* \
+            --title "$TAG" \
+            --notes-file release-notes.md \
+            --target "$GITHUB_SHA"

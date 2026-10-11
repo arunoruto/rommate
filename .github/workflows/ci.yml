@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call: # reused by the release workflow
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # Keep in sync with the golangci-lint in github:arunoruto/flake#go.
+  GOLANGCI_LINT_VERSION: v2.14.0
+
+jobs:
+  check:
+    name: Check (fmt, tidy, vet, lint, test) and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: extractions/setup-just@v4
+
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+          install-only: true
+
+      - name: just check
+        run: just check
+
+      - name: just build-all
+        run: just build-all
+
+      - name: Upload binaries
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: rommate-${{ github.event.pull_request.number }}
+          path: dist/rommate-*
+          retention-days: 7
+
+  test:
+    name: Test on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Linux is covered by the check job.
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: extractions/setup-just@v4
+
+      - name: just test
+        run: just test

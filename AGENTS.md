@@ -78,7 +78,12 @@ internal/tui/       Bubble Tea TUI: tabs, download queue, views, help, input-mod
   back through messages; do not add goroutines that touch model state.
 - **Core logic stays frontend-independent.** The CLI, TUI and JSON mode are thin layers over `internal/core`.
 - **Never commit secrets.** RomM tokens (`rmm_…`) belong in `~/.config/rommate/config.toml` or `ROMMATE_TOKEN`.
-- Commits follow [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `build:`, `docs:`, …).
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `build:`, `docs:`,
+  `ci:`, …). This is not cosmetic: the Release workflow derives the next version from them (`fix:` → patch, `feat:` →
+  minor, `!`/`BREAKING CHANGE:` → major) and builds the changelog from their subjects, so pick the type carefully and
+  write subjects for users.
+- CI (`.github/workflows/ci.yml`) runs `just check` and `just build-all` on Linux and `just test` on macOS and
+  Windows. Releases are cut manually via `.github/workflows/release.yml`; never create tags by hand.
 - Keep the README in sync with user-facing changes (flags, config keys, keybindings).
 
 ## Testing against a real server

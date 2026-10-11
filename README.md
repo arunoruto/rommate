@@ -1,5 +1,7 @@
 <a id="readme-top"></a>
 
+[![CI][ci-shield]][ci-url]
+[![Release][release-shield]][release-url]
 [![Go][go-shield]][go-url]
 [![Issues][issues-shield]][issues-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -217,6 +219,15 @@ just check                      # what CI runs: fmt, tidy, vet, lint, tests
 just package                    # release archives + checksums → dist/release
 ```
 
+### Releasing
+
+Releases follow [Semantic Versioning](https://semver.org) and are derived from
+[Conventional Commits](https://www.conventionalcommits.org): `fix:` bumps the patch version, `feat:` the minor
+version, and a breaking change (`feat!:` or a `BREAKING CHANGE:` footer) the major version (the minor version while
+on 0.x). To publish, run the **Release** workflow from the Actions tab or with `gh workflow run release.yml`. It runs
+CI, computes the next version with [go-semantic-release](https://github.com/go-semantic-release/semantic-release),
+builds the binaries with `just package` and creates the GitHub release with changelog and checksums.
+
 Project layout:
 
 ```text
@@ -276,6 +287,10 @@ Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+[ci-shield]: https://img.shields.io/github/actions/workflow/status/arunoruto/rommate/ci.yml?branch=main&style=for-the-badge&label=CI
+[ci-url]: https://github.com/arunoruto/rommate/actions/workflows/ci.yml
+[release-shield]: https://img.shields.io/github/v/release/arunoruto/rommate?style=for-the-badge&include_prereleases
+[release-url]: https://github.com/arunoruto/rommate/releases/latest
 [go-shield]: https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white
 [go-url]: https://go.dev
 [issues-shield]: https://img.shields.io/github/issues/arunoruto/rommate.svg?style=for-the-badge
