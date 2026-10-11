@@ -31,7 +31,7 @@ layout: hextra-home
 </div>
 
 <div class="hx:mb-12 hx:max-w-full">
-<code class="rm-install">curl -fL -o ~/.local/bin/rommate https://github.com/arunoruto/rommate/releases/latest/download/rommate-linux-arm64</code>
+<code class="rm-install">curl -fsSL https://arunoruto.github.io/rommate/install.sh | sh</code>
 </div>
 
 <div class="hx:mb-16">

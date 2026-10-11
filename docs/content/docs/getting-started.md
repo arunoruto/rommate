@@ -5,9 +5,30 @@ weight: 1
 
 {{% steps %}}
 
-### Download rommate
+### Install rommate
 
-Pick the binary for your device from the [latest release](https://github.com/arunoruto/rommate/releases/latest):
+{{< tabs >}}
+  {{< tab name="Install script" >}}
+The script picks the right binary for your system, checks its SHA-256 checksum and installs it to `~/.local/bin`:
+
+```sh
+curl -fsSL https://arunoruto.github.io/rommate/install.sh | sh
+```
+
+Set `ROMMATE_VERSION=v0.1.0` to install a specific release, or `ROMMATE_INSTALL_DIR` to install somewhere else. The
+script is [in the repository](https://github.com/arunoruto/rommate/blob/main/install.sh) if you want to read it first.
+  {{< /tab >}}
+  {{< tab name="bin" >}}
+[bin](https://github.com/marcosnils/bin) by Marcos Nils is a small, excellent manager for binaries from GitHub
+releases. It picks the right file for your system and can update rommate later:
+
+```sh
+bin install github.com/arunoruto/rommate
+bin update rommate
+```
+  {{< /tab >}}
+  {{< tab name="Manual download" >}}
+Download the binary for your device from the [latest release](https://github.com/arunoruto/rommate/releases/latest):
 
 | Device | Asset |
 |---|---|
@@ -16,33 +37,19 @@ Pick the binary for your device from the [latest release](https://github.com/aru
 | macOS on Apple Silicon | `rommate-darwin-arm64` |
 | Windows x86-64 (untested) | `rommate-windows-amd64.exe` |
 
-{{< tabs >}}
-  {{< tab name="ARM handheld" >}}
 ```sh
 mkdir -p ~/.local/bin
 curl -fL -o ~/.local/bin/rommate \
   https://github.com/arunoruto/rommate/releases/latest/download/rommate-linux-arm64
 chmod +x ~/.local/bin/rommate
 ```
-  {{< /tab >}}
-  {{< tab name="Steam Deck / x86" >}}
-```sh
-mkdir -p ~/.local/bin
-curl -fL -o ~/.local/bin/rommate \
-  https://github.com/arunoruto/rommate/releases/latest/download/rommate-linux-amd64
-chmod +x ~/.local/bin/rommate
-```
-  {{< /tab >}}
-  {{< tab name="macOS" >}}
-```sh
-curl -fL -o rommate https://github.com/arunoruto/rommate/releases/latest/download/rommate-darwin-arm64
-chmod +x rommate
-xattr -d com.apple.quarantine rommate   # the binary is not signed
-```
+
+On macOS, run `xattr -d com.apple.quarantine rommate` if Gatekeeper blocks the unsigned binary. Each release has a
+`checksums.txt` with SHA-256 sums.
   {{< /tab >}}
 {{< /tabs >}}
 
-Check it works with `rommate --version`. Each release also has a `checksums.txt` with SHA-256 sums.
+Check it works with `rommate --version`.
 
 ### Create a RomM API token
 

@@ -92,29 +92,29 @@ Why another sync tool?
 
 ### Installation
 
-Download the binary for your device from the [latest release](https://github.com/arunoruto/rommate/releases/latest):
-
-| Platform                                  | Asset                       |
-|-------------------------------------------|-----------------------------|
-| Linux ARM64 (Armada and other ARM handhelds) | `rommate-linux-arm64`    |
-| Linux x86-64 (Steam Deck, Steam Machine, PCs) | `rommate-linux-amd64`   |
-| macOS Apple Silicon                       | `rommate-darwin-arm64`      |
-| Windows x86-64 (untested)                 | `rommate-windows-amd64.exe` |
-
-For example on a handheld:
+**Install script** (Linux and macOS): picks the right binary, verifies its checksum and installs it to `~/.local/bin`.
 
 ```sh
-mkdir -p ~/.local/bin
-curl -fL -o ~/.local/bin/rommate \
-  https://github.com/arunoruto/rommate/releases/latest/download/rommate-linux-arm64
-chmod +x ~/.local/bin/rommate
-rommate --version
+curl -fsSL https://arunoruto.github.io/rommate/install.sh | sh
 ```
 
-Each release includes `checksums.txt` (SHA-256). On macOS the downloaded binary is unsigned; if Gatekeeper blocks it,
-run `xattr -d com.apple.quarantine rommate-darwin-arm64`.
+**[bin](https://github.com/marcosnils/bin)**, the great little manager for binaries from GitHub releases:
 
-To build from source instead, see [Development](#development).
+```sh
+bin install github.com/arunoruto/rommate
+```
+
+**Manual download** from the [latest release](https://github.com/arunoruto/rommate/releases/latest):
+
+| Platform                                      | Asset                       |
+|-----------------------------------------------|-----------------------------|
+| Linux ARM64 (Armada and other ARM handhelds)  | `rommate-linux-arm64`       |
+| Linux x86-64 (Steam Deck, Steam Machine, PCs) | `rommate-linux-amd64`       |
+| macOS Apple Silicon                           | `rommate-darwin-arm64`      |
+| Windows x86-64 (untested)                     | `rommate-windows-amd64.exe` |
+
+Each release includes `checksums.txt` (SHA-256). On macOS the binary is unsigned; if Gatekeeper blocks it, run
+`xattr -d com.apple.quarantine rommate-darwin-arm64`. To build from source, see [Development](#development).
 
 ### Configuration
 
@@ -253,18 +253,15 @@ docs/              website (Hugo + Hextra), deployed to GitHub Pages
 
 ## Roadmap
 
-- [x] RomM API client with Client API Token auth
-- [x] RomM → ES-DE folder mapping with EmuDeck/RetroDECK profiles
-- [x] Resumable, locked downloads with JSON progress events
-- [x] Controller-friendly TUI
-- [x] Tabs, Downloads page and Steam-style download bar
-- [ ] Search/filter in the TUI
-- [ ] Save sync (RetroArch first, then standalone emulators)
-- [ ] Native gamepad input via evdev when launched outside Steam
-- [ ] Optional cover art and `gamelist.xml` for ES-DE
-- [ ] Decky plugin on top of `--json`
+- [x] RomM client, ES-DE folder mapping and safe, resumable downloads
+- [x] Controller-friendly TUI with Library and Downloads tabs, CLI with `--json`
+- [x] Releases, install script and website
+- [ ] Search, Collections and Settings tabs, local server URL
+- [ ] BIOS / firmware sync and save sync
+- [ ] Mod manager, Decky plugin, other servers such as Retrom
 
-See the [open issues](https://github.com/arunoruto/rommate/issues) for a full list of proposed features and known issues.
+The full roadmap lives on the [website](https://arunoruto.github.io/rommate/docs/roadmap/), and every item has an
+[issue](https://github.com/arunoruto/rommate/issues?q=is%3Aissue+label%3Aroadmap).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -292,6 +289,7 @@ Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information
 * [RomM](https://github.com/rommapp/romm), the self-hosted ROM manager this talks to
 * [ES-DE](https://es-de.org), whose system names rommate follows
 * [Armada](https://armadaos.dev)
+* [bin](https://github.com/marcosnils/bin) by Marcos Nils, a lovely way to install rommate and other release binaries
 * [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
