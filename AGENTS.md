@@ -24,6 +24,16 @@ with `go install` instead.
   ```
 
   For a long session, enter it once with `nix develop github:arunoruto/flake#go-lsp`.
+- `nix develop <flake> -c <command>` is the equivalent of `devenv shell -- <command>`. Everything after `-c` (long form
+  `--command`) is the command and its arguments; there is no `--` separator.
+- `-c` runs a single program, not a shell line. For pipes, `&&` or variable expansion, wrap it:
+
+  ```sh
+  nix develop github:arunoruto/flake#go-lsp -c bash -c 'just build && ./dist/rommate --version'
+  ```
+
+- The flake is fetched from GitHub and cached; nix re-checks it roughly hourly. Add `--refresh` to pick up a change
+  that was just pushed to the flake.
 - `#go-lsp` includes the language servers (`gopls`, `golangci-lint-langserver`); `#go` is the same without them.
 
 Without nix, you need Go (version in `go.mod`), `just` and `golangci-lint` on the PATH.
