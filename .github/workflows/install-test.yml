@@ -1,0 +1,63 @@
+name: Install test
+
+# Installs the published release the way users do (install script and bin) on
+# Linux x86-64, Linux ARM64 and macOS. Runs after every release and on demand.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release tag to test (default latest)
+        required: false
+        default: latest
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: false
+        default: latest
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    name: ${{ matrix.method }} on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+        method: [script, bin]
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ inputs.version || 'latest' }}
+    steps:
+      - name: Install with the script
+        if: matrix.method == 'script'
+        run: |
+          if [ "$VERSION" != latest ]; then export ROMMATE_VERSION="$VERSION"; fi
+          curl -fsSL https://arunoruto.github.io/rommate/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - uses: actions/setup-go@v7
+        if: matrix.method == 'bin'
+        with:
+          go-version: stable
+
+      - name: Install with bin
+        if: matrix.method == 'bin'
+        env:
+          GITHUB_AUTH_TOKEN: ${{ github.token }}
+        run: |
+          go install github.com/marcosnils/bin@latest
+          mkdir -p "$HOME/.local/bin" "$HOME/.config/bin"
+          echo "{\"default_path\": \"$HOME/.local/bin\", \"bins\": {}}" > "$HOME/.config/bin/config.json"
+          ref="github.com/arunoruto/rommate"
+          if [ "$VERSION" != latest ]; then ref="$ref/releases/tag/$VERSION"; fi
+          "$(go env GOPATH)/bin/bin" install "$ref" "$HOME/.local/bin/rommate"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Check the installed binary
+        run: |
+          rommate --version
+          rommate mappings | head -3

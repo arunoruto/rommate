@@ -26,6 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      tag: ${{ steps.semrel.outputs.version != '' && format('v{0}', steps.semrel.outputs.version) || '' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -68,6 +70,13 @@ jobs:
             cat <<NOTES
           ## Install
 
+          \`\`\`sh
+          curl -fsSL https://arunoruto.github.io/rommate/install.sh | sh
+          \`\`\`
+
+          Or with [bin](https://github.com/marcosnils/bin): \`bin install github.com/arunoruto/rommate\`.
+          See the [getting started guide](https://arunoruto.github.io/rommate/docs/getting-started/) for all options.
+
           | Platform | Asset |
           |---|---|
           | Linux ARM64 (Armada and other ARM handhelds) | \`rommate-linux-arm64\` |
@@ -75,17 +84,13 @@ jobs:
           | macOS Apple Silicon | \`rommate-darwin-arm64\` |
           | Windows x86-64 (untested) | \`rommate-windows-amd64.exe\` |
 
-          \`\`\`sh
-          curl -fL -o ~/.local/bin/rommate https://github.com/${REPO}/releases/latest/download/rommate-linux-arm64
-          chmod +x ~/.local/bin/rommate
-          \`\`\`
-
           SHA-256 checksums are in \`checksums.txt\`.
           NOTES
           } > release-notes.md
           cat release-notes.md
 
       - name: Publish GitHub release
+        id: publish
         if: steps.semrel.outputs.version != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -95,3 +100,11 @@ jobs:
             --title "$TAG" \
             --notes-file release-notes.md \
             --target "$GITHUB_SHA"
+
+  # Install the new release the way users do, on every supported runner.
+  install-test:
+    needs: release
+    if: needs.release.outputs.tag != ''
+    uses: ./.github/workflows/install-test.yml
+    with:
+      version: ${{ needs.release.outputs.tag }}
