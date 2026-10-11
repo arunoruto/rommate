@@ -84,16 +84,29 @@ Why another sync tool?
 
 ### Installation
 
-Build the binary for your device (see [Development](#development)) and copy it over:
+Download the binary for your device from the [latest release](https://github.com/arunoruto/rommate/releases/latest):
+
+| Platform                                  | Asset                       |
+|-------------------------------------------|-----------------------------|
+| Linux ARM64 (Armada and other ARM handhelds) | `rommate-linux-arm64`    |
+| Linux x86-64 (Steam Deck, Steam Machine, PCs) | `rommate-linux-amd64`   |
+| macOS Apple Silicon                       | `rommate-darwin-arm64`      |
+| Windows x86-64 (untested)                 | `rommate-windows-amd64.exe` |
+
+For example on a handheld:
 
 ```sh
-# Armada and other ARM handhelds
-just build-target linux arm64     # → dist/rommate-linux-arm64
-just deploy armada@armada.local   # build + copy in one step
-
-# Steam Deck / Steam Machine
-just build-target linux amd64     # → dist/rommate-linux-amd64
+mkdir -p ~/.local/bin
+curl -fL -o ~/.local/bin/rommate \
+  https://github.com/arunoruto/rommate/releases/latest/download/rommate-linux-arm64
+chmod +x ~/.local/bin/rommate
+rommate --version
 ```
+
+Each release includes `checksums.txt` (SHA-256). On macOS the downloaded binary is unsigned; if Gatekeeper blocks it,
+run `xattr -d com.apple.quarantine rommate-darwin-arm64`.
+
+To build from source instead, see [Development](#development).
 
 ### Configuration
 

@@ -8,14 +8,14 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 # Build metadata embedded via -ldflags (see cmd/rommate/main.go).
 version := env("VERSION", `git describe --tags --always --dirty 2>/dev/null || echo dev`)
 commit := `git rev-parse --short HEAD 2>/dev/null || echo unknown`
-date := `date -u +%Y-%m-%dT%H:%M:%SZ`
+date := env("BUILD_DATE", `date -u +%Y-%m-%dT%H:%M:%SZ`)
 ldflags := "-s -w -X main.version=" + version + " -X main.commit=" + commit + " -X main.date=" + date
 
 pkg := "./cmd/rommate"
 dist := "dist"
 
-# Release targets as os/arch pairs.
-targets := "linux/amd64 linux/arm64 darwin/amd64 darwin/arm64"
+# Release targets as os/arch pairs. Windows builds are published but untested.
+targets := "linux/amd64 linux/arm64 darwin/arm64 windows/amd64"
 
 export CGO_ENABLED := "0"
 
@@ -32,11 +32,13 @@ build:
 # Build for one platform, e.g. `just build-target linux arm64`
 build-target os arch:
     GOOS={{ os }} GOARCH={{ arch }} go build -trimpath -ldflags '{{ ldflags }}' \
-        -o {{ dist }}/rommate-{{ os }}-{{ arch }} {{ pkg }}
+        -o {{ dist }}/rommate-{{ os }}-{{ arch }}{{ if os == "windows" { ".exe" } else { "" } }} {{ pkg }}
 
 # Build every release target
 build-all:
-    for t in {{ targets }}; do just build-target "${t%/*}" "${t#*/}"; done
+    for t in {{ targets }}; do \
+        VERSION={{ version }} BUILD_DATE={{ date }} just dist={{ dist }} build-target "${t%/*}" "${t#*/}"; \
+    done
 
 # Run rommate with arguments, e.g. `just run platforms`
 run *args:
@@ -88,21 +90,16 @@ check: fmt-check tidy-check vet lint test
 version:
     @echo {{ version }}
 
-# Build all targets and package them with checksums → dist/release
-package: clean build-all
+# Build all release binaries with checksums → dist/release
+#
+# Assets keep the same names in every release (rommate-linux-arm64, …) so
+# https://github.com/arunoruto/rommate/releases/latest/download/<asset> always
+# points to the newest build.
+package: clean
     mkdir -p {{ dist }}/release
-    for t in {{ targets }}; do \
-        os="${t%/*}"; arch="${t#*/}"; \
-        name="rommate_{{ version }}_${os}_${arch}"; \
-        mkdir -p "{{ dist }}/$name"; \
-        cp "{{ dist }}/rommate-${os}-${arch}" "{{ dist }}/$name/rommate"; \
-        cp README.md "{{ dist }}/$name/"; \
-        if [ -f LICENSE ]; then cp LICENSE "{{ dist }}/$name/"; fi; \
-        tar -C {{ dist }} -czf "{{ dist }}/release/$name.tar.gz" "$name"; \
-        rm -rf "{{ dist }}/$name"; \
-    done
-    cd {{ dist }}/release && (command -v sha256sum >/dev/null && sha256sum *.tar.gz || shasum -a 256 *.tar.gz) > checksums.txt
-    @echo "packages in {{ dist }}/release:" && ls -1 {{ dist }}/release
+    just dist={{ dist }}/release build-all
+    cd {{ dist }}/release && (command -v sha256sum >/dev/null && sha256sum rommate-* || shasum -a 256 rommate-*) > checksums.txt
+    @echo "release assets in {{ dist }}/release:" && ls -1 {{ dist }}/release
 
 # Remove build output
 clean:

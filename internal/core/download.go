@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"syscall"
 	"time"
 
 	"github.com/arunoruto/rommate/internal/romm"
@@ -29,7 +28,7 @@ func downloadFile(ctx context.Context, c *romm.Client, romID int, f romm.RomFile
 	defer out.Close()
 
 	// The .part file doubles as a lock so two processes never write it at once.
-	if err := syscall.Flock(int(out.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+	if err := lockFile(out); err != nil {
 		return ErrBusy
 	}
 
@@ -67,6 +66,10 @@ func downloadFile(ctx context.Context, c *romm.Client, romID int, f romm.RomFile
 		return fmt.Errorf("%s: got %d bytes, expected %d", f.FileName, pw.n, f.FileSizeBytes)
 	}
 	if err := out.Sync(); err != nil {
+		return err
+	}
+	// Close (and unlock) before renaming: Windows cannot rename open files.
+	if err := out.Close(); err != nil {
 		return err
 	}
 	return os.Rename(part, dest)
