@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -76,6 +77,23 @@ var esdeAliases = map[string]string{
 	"win3x":                       "windows3x",
 	"wonderswan-color":            "wonderswancolor",
 	"zxs":                         "zxspectrum",
+}
+
+// Alias is a built-in RomM slug → ES-DE folder mapping.
+type Alias struct {
+	Slug   string `json:"slug"`
+	Folder string `json:"folder"`
+}
+
+// Aliases returns the built-in mappings for slugs whose ES-DE folder differs
+// from the RomM slug, sorted by slug.
+func Aliases() []Alias {
+	out := make([]Alias, 0, len(esdeAliases))
+	for slug, folder := range esdeAliases {
+		out = append(out, Alias{Slug: slug, Folder: folder})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Slug < out[j].Slug })
+	return out
 }
 
 // Mapper resolves the folder a platform's ROMs belong in.

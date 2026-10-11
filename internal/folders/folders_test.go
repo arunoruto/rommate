@@ -42,3 +42,15 @@ func TestESDEROMDirectory(t *testing.T) {
 		t.Errorf("esdeROMDirectory = %q", got)
 	}
 }
+
+func TestAliasesSortedAndComplete(t *testing.T) {
+	as := Aliases()
+	if len(as) != len(esdeAliases) {
+		t.Fatalf("got %d aliases, want %d", len(as), len(esdeAliases))
+	}
+	for i := 1; i < len(as); i++ {
+		if as[i-1].Slug >= as[i].Slug {
+			t.Fatalf("not sorted at %d: %q >= %q", i, as[i-1].Slug, as[i].Slug)
+		}
+	}
+}

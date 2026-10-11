@@ -42,6 +42,7 @@ Usage:
   rommate pull --platform <p>     download every missing game of a platform
   rommate remove <rom-id>...      delete downloaded games
   rommate status                  show downloaded games
+  rommate mappings                show RomM platforms whose ES-DE folder differs
   rommate version                 print version information
 
 Every command accepts --json to print machine-readable output (JSON lines for
@@ -82,6 +83,8 @@ func run(ctx context.Context, args []string) error {
 		return cmdRemove(ctx, rest)
 	case "status":
 		return cmdStatus(rest)
+	case "mappings":
+		return cmdMappings(rest)
 	case "version", "--version", "-v":
 		fmt.Printf("rommate %s (commit %s, built %s)\n", version, commit, date)
 		return nil
@@ -429,4 +432,28 @@ func cmdStatus(args []string) error {
 		}
 		return tw.Flush()
 	})
+}
+
+// cmdMappings prints the built-in RomM slug → ES-DE folder aliases. It needs
+// no config, so it also feeds the documentation site (just site-data).
+func cmdMappings(args []string) error {
+	fs, asJSON := newFlags("mappings")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(pos) > 0 {
+		return fmt.Errorf("mappings takes no arguments, got %q", pos)
+	}
+	aliases := folders.Aliases()
+	if *asJSON {
+		return printJSON(aliases)
+	}
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(tw, "ROMM SLUG\tES-DE FOLDER")
+	for _, a := range aliases {
+		fmt.Fprintf(tw, "%s\t%s\n", a.Slug, a.Folder)
+	}
+	fmt.Fprintln(tw, "\nAll other platforms use the RomM slug as folder name. Override any of them under [folders] in config.toml.")
+	return tw.Flush()
 }
