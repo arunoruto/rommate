@@ -16,6 +16,7 @@ Every TUI action is also a command, which makes rommate easy to script over SSH 
 | `rommate remove <rom-id>…` | Delete downloaded games from the device. |
 | `rommate status` | List what rommate has downloaded and flag files that went missing. |
 | `rommate mappings` | Show the platforms whose ES-DE folder differs from the RomM slug. |
+| `rommate config` | Show the effective configuration, including environment overrides, and whether it is complete. The token is never printed. |
 | `rommate version` | Print version, commit and build date. |
 
 Flags can go before or after arguments: `rommate roms nes --json` and `rommate roms --json nes` both work.

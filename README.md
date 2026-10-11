@@ -188,6 +188,7 @@ rommate pull --platform n3ds      # download every missing game of a platform
 rommate status                    # what's on this device
 rommate remove 9                  # delete a downloaded game
 rommate mappings                  # platforms whose ES-DE folder differs from the RomM slug
+rommate config                    # effective configuration (never shows the token)
 ```
 
 ### JSON output

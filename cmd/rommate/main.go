@@ -43,6 +43,7 @@ Usage:
   rommate remove <rom-id>...      delete downloaded games
   rommate status                  show downloaded games
   rommate mappings                show RomM platforms whose ES-DE folder differs
+  rommate config                  show the current configuration (never the token)
   rommate version                 print version information
 
 Every command accepts --json to print machine-readable output (JSON lines for
@@ -85,6 +86,8 @@ func run(ctx context.Context, args []string) error {
 		return cmdStatus(rest)
 	case "mappings":
 		return cmdMappings(rest)
+	case "config":
+		return cmdConfig(rest)
 	case "version", "--version", "-v":
 		fmt.Printf("rommate %s (commit %s, built %s)\n", version, commit, date)
 		return nil
@@ -456,4 +459,77 @@ func cmdMappings(args []string) error {
 	}
 	fmt.Fprintln(tw, "\nAll other platforms use the RomM slug as folder name. Override any of them under [folders] in config.toml.")
 	return tw.Flush()
+}
+
+// configInfo is the output of `rommate config`. It never contains the token.
+type configInfo struct {
+	Configured bool              `json:"configured"`
+	Problem    string            `json:"problem,omitempty"`
+	ConfigPath string            `json:"config_path"`
+	Server     string            `json:"server"`
+	TokenSet   bool              `json:"token_set"`
+	Profile    string            `json:"profile"`
+	ROMDir     string            `json:"rom_dir"`
+	Hints      string            `json:"hints"`
+	Folders    map[string]string `json:"folders,omitempty"`
+}
+
+// cmdConfig shows the effective configuration, including environment
+// overrides. It works without a valid config so frontends such as the Decky
+// plugin can tell whether setup is still needed.
+func cmdConfig(args []string) error {
+	fs, asJSON := newFlags("config")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(pos) > 0 {
+		return fmt.Errorf("config takes no arguments, got %q", pos)
+	}
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+	path, _ := config.Path()
+	hints := cfg.Hints
+	if hints == "" {
+		hints = "auto"
+	}
+	info := configInfo{
+		Configured: true,
+		ConfigPath: path,
+		Server:     cfg.Server,
+		TokenSet:   cfg.Token != "",
+		Profile:    string(cfg.Profile),
+		ROMDir:     cfg.Mapper().Root,
+		Hints:      hints,
+		Folders:    cfg.Folders,
+	}
+	if err := cfg.Validate(); err != nil {
+		info.Configured, info.Problem = false, err.Error()
+	}
+	if *asJSON {
+		return printJSON(info)
+	}
+	token := "not set"
+	if info.TokenSet {
+		token = "set"
+	}
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintf(tw, "config file\t%s\n", info.ConfigPath)
+	fmt.Fprintf(tw, "server\t%s\n", info.Server)
+	fmt.Fprintf(tw, "token\t%s\n", token)
+	fmt.Fprintf(tw, "profile\t%s\n", info.Profile)
+	fmt.Fprintf(tw, "rom dir\t%s\n", info.ROMDir)
+	fmt.Fprintf(tw, "hints\t%s\n", info.Hints)
+	for slug, folder := range info.Folders {
+		fmt.Fprintf(tw, "folder override\t%s → %s\n", slug, folder)
+	}
+	if err := tw.Flush(); err != nil {
+		return err
+	}
+	if !info.Configured {
+		fmt.Printf("\nNot ready: %s\n", info.Problem)
+	}
+	return nil
 }
