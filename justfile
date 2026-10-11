@@ -102,6 +102,41 @@ package: clean
     cd {{ dist }}/release && (command -v sha256sum >/dev/null && sha256sum rommate-* || shasum -a 256 rommate-*) > checksums.txt
     @echo "release assets in {{ dist }}/release:" && ls -1 {{ dist }}/release
 
+# ── website (docs/) ──────────────────────────────────────────────────────────
+
+# Hugo from PATH, or from nixpkgs when it isn't installed.
+hugo := if `command -v hugo || true` != "" { "hugo" } else { "nix run nixpkgs#hugo --" }
+freeze := if `command -v freeze || true` != "" { "freeze" } else { "nix run nixpkgs#charm-freeze --" }
+
+# Serve the website with live reload at http://localhost:1313/rommate/
+site: site-data
+    cd docs && {{ hugo }} server --buildDrafts --disableFastRender
+
+# Build the website → docs/public (CI passes the Pages URL as base_url)
+site-build base_url="": site-data
+    cd docs && {{ hugo }} --gc --minify {{ if base_url != "" { "--baseURL " + base_url } else { "" } }}
+
+# Regenerate data the website reads from the code (folder mappings)
+site-data:
+    go run {{ pkg }} mappings --json > docs/data/mappings.json
+
+# Render TUI screenshots for the website → docs/static/images/screenshots
+screenshots:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    ROMMATE_SCREENSHOT_DIR="$tmp" go test -count=1 -run TestScreenshots ./internal/tui/
+    out=docs/static/images/screenshots
+    mkdir -p "$out"
+    for f in "$tmp"/*.ansi; do
+        name="$(basename "$f" .ansi)"
+        {{ freeze }} --execute "cat $f" --window --padding 24 --margin 0 --border.radius 10 \
+            --background "#16161E" --font.family "JetBrains Mono" --font.size 14 \
+            --output "$out/$name.png" < /dev/null > /dev/null
+        echo "wrote $out/$name.png"
+    done
+
 # Remove build output
 clean:
     rm -rf {{ dist }}

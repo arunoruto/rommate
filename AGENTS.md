@@ -51,6 +51,7 @@ just build                    # → dist/rommate
 just build-target linux arm64 # cross-compile (CGO is off, builds are static)
 just package                  # release binaries + checksums.txt → dist/release
 just run platforms            # go run with arguments
+just site                     # preview the website at http://localhost:1313/rommate/
 ```
 
 ## Layout
@@ -63,7 +64,14 @@ internal/folders/   RomM slug → ES-DE folder mapping, frontend profiles (es-de
 internal/state/     SQLite record of downloaded games (pure Go driver, no CGO)
 internal/config/    ~/.config/rommate/config.toml (on every OS, including macOS)
 internal/tui/       Bubble Tea TUI: tabs, download queue, views, help, input-mode detection
+docs/              website: Hugo + Hextra (Hugo module), deployed to GitHub Pages by pages.yml
 ```
+
+The website is user documentation. When a change affects users (commands, flags, config keys, keybindings, folder
+mappings), update the matching page in `docs/content/docs/` as well as the README. `just site` previews it; Hugo comes
+from nixpkgs if it isn't installed. `docs/data/mappings.json` is generated (`just site-data`), and the TUI screenshots
+in `docs/static/images/screenshots/` are rendered from sample data with `just screenshots`: re-run it after visible
+TUI changes.
 
 ## Conventions
 

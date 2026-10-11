@@ -1,0 +1,250 @@
+[
+  {
+    "slug": "3ds",
+    "folder": "n3ds"
+  },
+  {
+    "slug": "64dd",
+    "folder": "n64dd"
+  },
+  {
+    "slug": "acorn-archimedes",
+    "folder": "archimedes"
+  },
+  {
+    "slug": "acorn-electron",
+    "folder": "electron"
+  },
+  {
+    "slug": "acpc",
+    "folder": "amstradcpc"
+  },
+  {
+    "slug": "amiga-cd32",
+    "folder": "amigacd32"
+  },
+  {
+    "slug": "apple-iigs",
+    "folder": "apple2gs"
+  },
+  {
+    "slug": "appleii",
+    "folder": "apple2"
+  },
+  {
+    "slug": "arcadia-2001",
+    "folder": "arcadia"
+  },
+  {
+    "slug": "astrocade",
+    "folder": "astrocde"
+  },
+  {
+    "slug": "atari-jaguar-cd",
+    "folder": "atarijaguarcd"
+  },
+  {
+    "slug": "atari-st",
+    "folder": "atarist"
+  },
+  {
+    "slug": "atari-xegs",
+    "folder": "atarixe"
+  },
+  {
+    "slug": "atari8bit",
+    "folder": "atari800"
+  },
+  {
+    "slug": "c-plus-4",
+    "folder": "plus4"
+  },
+  {
+    "slug": "colecoadam",
+    "folder": "adam"
+  },
+  {
+    "slug": "commodore-cdtv",
+    "folder": "cdtv"
+  },
+  {
+    "slug": "dc",
+    "folder": "dreamcast"
+  },
+  {
+    "slug": "dragon-32-slash-64",
+    "folder": "dragon32"
+  },
+  {
+    "slug": "epoch-super-cassette-vision",
+    "folder": "scv"
+  },
+  {
+    "slug": "fairchild-channel-f",
+    "folder": "channelf"
+  },
+  {
+    "slug": "fm-7",
+    "folder": "fm7"
+  },
+  {
+    "slug": "fm-towns",
+    "folder": "fmtowns"
+  },
+  {
+    "slug": "g-and-w",
+    "folder": "gameandwatch"
+  },
+  {
+    "slug": "game-dot-com",
+    "folder": "gamecom"
+  },
+  {
+    "slug": "jaguar",
+    "folder": "atarijaguar"
+  },
+  {
+    "slug": "lynx",
+    "folder": "atarilynx"
+  },
+  {
+    "slug": "mac",
+    "folder": "macintosh"
+  },
+  {
+    "slug": "neo-geo-cd",
+    "folder": "neogeocd"
+  },
+  {
+    "slug": "neo-geo-pocket",
+    "folder": "ngp"
+  },
+  {
+    "slug": "neo-geo-pocket-color",
+    "folder": "ngpc"
+  },
+  {
+    "slug": "neogeoaes",
+    "folder": "neogeo"
+  },
+  {
+    "slug": "neogeomvs",
+    "folder": "neogeo"
+  },
+  {
+    "slug": "new-nintendo-3ds",
+    "folder": "n3ds"
+  },
+  {
+    "slug": "ngc",
+    "folder": "gc"
+  },
+  {
+    "slug": "odyssey-2",
+    "folder": "odyssey2"
+  },
+  {
+    "slug": "pc-8800-series",
+    "folder": "pc88"
+  },
+  {
+    "slug": "pc-9800-series",
+    "folder": "pc98"
+  },
+  {
+    "slug": "pc-fx",
+    "folder": "pcfx"
+  },
+  {
+    "slug": "philips-cd-i",
+    "folder": "cdimono1"
+  },
+  {
+    "slug": "pokemon-mini",
+    "folder": "pokemini"
+  },
+  {
+    "slug": "sam-coupe",
+    "folder": "samcoupe"
+  },
+  {
+    "slug": "sega32",
+    "folder": "sega32x"
+  },
+  {
+    "slug": "sfam",
+    "folder": "sfc"
+  },
+  {
+    "slug": "sg1000",
+    "folder": "sg-1000"
+  },
+  {
+    "slug": "sharp-x68000",
+    "folder": "x68000"
+  },
+  {
+    "slug": "sms",
+    "folder": "mastersystem"
+  },
+  {
+    "slug": "sufami-turbo",
+    "folder": "sufami"
+  },
+  {
+    "slug": "super-acan",
+    "folder": "supracan"
+  },
+  {
+    "slug": "thomson-mo5",
+    "folder": "moto"
+  },
+  {
+    "slug": "ti-99",
+    "folder": "ti99"
+  },
+  {
+    "slug": "ti-994a",
+    "folder": "ti99"
+  },
+  {
+    "slug": "tic-80",
+    "folder": "tic80"
+  },
+  {
+    "slug": "trs-80-color-computer",
+    "folder": "coco"
+  },
+  {
+    "slug": "turbografx-cd",
+    "folder": "tg-cd"
+  },
+  {
+    "slug": "vic-20",
+    "folder": "vic20"
+  },
+  {
+    "slug": "videopac-g7400",
+    "folder": "videopac"
+  },
+  {
+    "slug": "wasm-4",
+    "folder": "wasm4"
+  },
+  {
+    "slug": "win",
+    "folder": "windows"
+  },
+  {
+    "slug": "win3x",
+    "folder": "windows3x"
+  },
+  {
+    "slug": "wonderswan-color",
+    "folder": "wonderswancolor"
+  },
+  {
+    "slug": "zxs",
+    "folder": "zxspectrum"
+  }
+]

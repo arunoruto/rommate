@@ -19,6 +19,8 @@
     Your RomM server's roommate on the handheld: sync games straight into the right ES-DE folders,
     from a controller-friendly TUI or the command line.
     <br />
+    <a href="https://arunoruto.github.io/rommate/"><strong>Explore the docs »</strong></a>
+    <br />
     <br />
     <a href="https://github.com/arunoruto/rommate/issues/new?labels=bug">Report Bug</a>
     &middot;
@@ -185,6 +187,7 @@ rommate pull 9 12                 # download games by id
 rommate pull --platform n3ds      # download every missing game of a platform
 rommate status                    # what's on this device
 rommate remove 9                  # delete a downloaded game
+rommate mappings                  # platforms whose ES-DE folder differs from the RomM slug
 ```
 
 ### JSON output
@@ -220,7 +223,8 @@ just deploy                     # build for arm64 + copy to armada@armada.local 
 
 just test                       # unit tests
 just check                      # what CI runs: fmt, tidy, vet, lint, tests
-just package                    # release archives + checksums → dist/release
+just package                    # release binaries + checksums → dist/release
+just site                       # preview the website (docs/) at http://localhost:1313/rommate/
 ```
 
 ### Releasing
@@ -242,6 +246,7 @@ internal/folders/   RomM slug → ES-DE folder mapping, frontend profiles
 internal/state/     SQLite record of downloaded games
 internal/config/    config.toml handling
 internal/tui/       Bubble Tea TUI
+docs/              website (Hugo + Hextra), deployed to GitHub Pages
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

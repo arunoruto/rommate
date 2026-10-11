@@ -1,0 +1,16 @@
+{{- /*
+Renders the built-in RomM slug → ES-DE folder mappings from data/mappings.json.
+The data file is generated from the Go code with `just site-data`.
+*/ -}}
+{{- $rows := hugo.Data.mappings -}}
+<table>
+  <thead>
+    <tr><th>RomM slug</th><th>ES-DE folder</th></tr>
+  </thead>
+  <tbody>
+    {{- range $rows }}
+    <tr><td><code>{{ .slug }}</code></td><td><code>{{ .folder }}</code></td></tr>
+    {{- end }}
+  </tbody>
+</table>
+<p class="hx:text-sm hx:text-gray-500">{{ len $rows }} platforms use a different folder name. Generated from the rommate source code.</p>

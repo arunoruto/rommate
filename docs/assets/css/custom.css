@@ -1,0 +1,68 @@
+/* rommate brand: the TUI's violet → pink gradient. */
+:root {
+  /* #7B61FF */
+  --primary-hue: 250deg;
+  --primary-saturation: 100%;
+  --primary-lightness: 69%;
+}
+
+.rm-gradient {
+  background: linear-gradient(90deg, #7b61ff, #ff7ab8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.rm-hero-logo {
+  width: 96px;
+  height: 96px;
+  filter: drop-shadow(0 12px 32px rgba(123, 97, 255, 0.35));
+}
+
+.rm-screenshot {
+  border-radius: 12px;
+  box-shadow: 0 24px 64px -24px rgba(22, 22, 30, 0.6);
+}
+
+/* Code-like install line on the landing page. */
+.rm-install {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Landing page: screenshot section. */
+.rm-closer {
+  margin-top: 5rem;
+  width: 100%;
+}
+.rm-section-title {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+}
+.rm-shots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 2rem;
+}
+.rm-shots figure {
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.rm-shots img {
+  width: 100%;
+  height: auto;
+}
+.rm-shots figcaption {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+.rm-shots figcaption strong {
+  display: block;
+  opacity: 1;
+}

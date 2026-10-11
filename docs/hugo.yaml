@@ -1,0 +1,81 @@
+# rommate website, built with Hugo and the Hextra theme.
+# Local preview: `just site` (from the repository root).
+baseURL: https://arunoruto.github.io/rommate/
+title: rommate
+enableRobotsTXT: true
+enableGitInfo: true
+
+module:
+  imports:
+    - path: github.com/imfing/hextra
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true # raw HTML in the landing page
+  highlight:
+    noClasses: false
+
+menu:
+  main:
+    - name: Docs
+      pageRef: /docs
+      weight: 1
+    - name: Releases ↗
+      url: https://github.com/arunoruto/rommate/releases
+      weight: 2
+    - name: Search
+      weight: 3
+      params:
+        type: search
+    - name: GitHub
+      weight: 4
+      url: https://github.com/arunoruto/rommate
+      params:
+        icon: github
+
+params:
+  # Open Graph / Twitter card image for link previews.
+  images:
+    - images/social-preview.png
+
+  description: Sync games from your RomM server to Linux handhelds, straight into the folders ES-DE, EmuDeck and RetroDECK expect.
+
+  navbar:
+    displayTitle: true
+    displayLogo: true
+    logo:
+      path: images/logo.svg
+      width: 28
+      height: 28
+    width: wide
+
+  page:
+    width: wide
+
+  theme:
+    default: system
+    displayToggle: true
+
+  footer:
+    enable: true
+    displayCopyright: true
+    displayPoweredBy: true
+
+  displayUpdatedDate: true
+  dateFormat: "January 2, 2006"
+
+  search:
+    enable: true
+    type: flexsearch
+    flexsearch:
+      index: content
+
+  editURL:
+    enable: true
+    base: https://github.com/arunoruto/rommate/edit/main/docs/content
+
+  highlight:
+    copy:
+      enable: true
+      display: hover
