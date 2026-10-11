@@ -3,6 +3,7 @@
 [![Go][go-shield]][go-url]
 [![Issues][issues-shield]][issues-url]
 [![Stargazers][stars-shield]][stars-url]
+[![MIT License][license-shield]][license-url]
 
 <br />
 <div align="center">
@@ -247,7 +248,7 @@ create a pull request:
 
 ## License
 
-License to be decided.
+Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -266,3 +267,5 @@ License to be decided.
 [issues-url]: https://github.com/arunoruto/rommate/issues
 [stars-shield]: https://img.shields.io/github/stars/arunoruto/rommate.svg?style=for-the-badge
 [stars-url]: https://github.com/arunoruto/rommate/stargazers
+[license-shield]: https://img.shields.io/github/license/arunoruto/rommate.svg?style=for-the-badge
+[license-url]: https://github.com/arunoruto/rommate/blob/main/LICENSE
