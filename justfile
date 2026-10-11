@@ -1,7 +1,8 @@
 # rommate task runner. Run `just` to list recipes.
 #
 # This file is the single place where build, test and release commands live:
-# the devenv shell, local development and CI all call these recipes.
+# local development (nix develop github:arunoruto/flake#go-lsp) and CI all
+# call these recipes.
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 

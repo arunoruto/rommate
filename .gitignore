@@ -12,12 +12,8 @@ coverage.*
 go.work
 go.work.sum
 
-# ── devenv / direnv / nix ────────────────────────────────────────────────────
-.devenv*
-devenv.local.nix
-devenv.local.yaml
+# ── direnv / nix ─────────────────────────────────────────────────────────────
 .direnv/
-.pre-commit-config.yaml
 result
 result-*
 

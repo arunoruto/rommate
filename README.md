@@ -71,7 +71,7 @@ Why another sync tool?
 * [![Go][go-shield]][go-url]
 * [Bubble Tea](https://github.com/charmbracelet/bubbletea) & [Lip Gloss](https://github.com/charmbracelet/lipgloss) for the TUI
 * [modernc.org/sqlite](https://modernc.org/sqlite) for local state (pure Go, no CGO)
-* [devenv](https://devenv.sh) for the development environment
+* [Nix](https://nixos.org) and [just](https://just.systems) for the development environment
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -197,11 +197,13 @@ Event types: `start`, `progress`, `done`, `skipped`, `error`.
 
 ## Development
 
-The repository includes a [devenv](https://devenv.sh) shell with Go, gopls, golangci-lint, delve, just, nixd and taplo,
-plus gofmt, govet and nixfmt git hooks. All common tasks are [just](https://just.systems) recipes:
+The development shell comes from [github:arunoruto/flake](https://github.com/arunoruto/flake) (`#go-lsp`): Go,
+gopls, golangci-lint, delve and just. With [nix-direnv](https://github.com/nix-community/nix-direnv) it loads
+automatically via `.envrc`; otherwise use `nix develop github:arunoruto/flake#go-lsp`. All common tasks are
+[just](https://just.systems) recipes:
 
 ```sh
-direnv allow                    # or: devenv shell
+direnv allow                    # or: nix develop github:arunoruto/flake#go-lsp
 just                            # list all recipes
 
 just build                      # → dist/rommate (current machine)
