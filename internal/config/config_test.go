@@ -8,6 +8,7 @@ import (
 func TestPath(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home) // os.UserHomeDir on Windows
 
 	t.Setenv("XDG_CONFIG_HOME", "")
 	if got, _ := Path(); got != filepath.Join(home, ".config", "rommate", "config.toml") {
