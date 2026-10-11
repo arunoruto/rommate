@@ -9,12 +9,14 @@ on:
     paths:
       - docs/**
       - internal/folders/** # the folder mapping table is generated from it
+      - install.sh # served at /install.sh
       - justfile
       - .github/workflows/pages.yml
   pull_request:
     paths:
       - docs/**
       - internal/folders/**
+      - install.sh
       - justfile
       - .github/workflows/pages.yml
   workflow_dispatch:

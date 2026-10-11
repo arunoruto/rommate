@@ -65,6 +65,8 @@ internal/state/     SQLite record of downloaded games (pure Go driver, no CGO)
 internal/config/    ~/.config/rommate/config.toml (on every OS, including macOS)
 internal/tui/       Bubble Tea TUI: tabs, download queue, views, help, input-mode detection
 docs/              website: Hugo + Hextra (Hugo module), deployed to GitHub Pages by pages.yml
+install.sh          POSIX installer (served at /install.sh on the website): keep it shellcheck-clean and in sync
+                    with the release asset names produced by `just package`
 ```
 
 The website is user documentation. When a change affects users (commands, flags, config keys, keybindings, folder

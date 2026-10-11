@@ -2,3 +2,6 @@
 /public/
 /resources/
 .hugo_build.lock
+
+# Copied from the repository root by `just site-data`
+/static/install.sh

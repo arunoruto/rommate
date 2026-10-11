@@ -116,9 +116,10 @@ site: site-data
 site-build base_url="": site-data
     cd docs && {{ hugo }} --gc --minify {{ if base_url != "" { "--baseURL " + base_url } else { "" } }}
 
-# Regenerate data the website reads from the code (folder mappings)
+# Regenerate files the website takes from the repo (folder mappings, install.sh)
 site-data:
     go run {{ pkg }} mappings --json > docs/data/mappings.json
+    cp install.sh docs/static/install.sh
 
 # Render TUI screenshots for the website → docs/static/images/screenshots
 screenshots:
