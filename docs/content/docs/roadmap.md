@@ -16,13 +16,13 @@ share ideas.
 - Controller-friendly TUI with Library and Downloads tabs, a Steam-style download bar and a help screen
 - Keyboard or controller hints depending on how rommate was started
 - Releases for Linux (x86-64, ARM64), macOS (Apple Silicon) and Windows, an install script and this website
+- Local server address with automatic fallback and mDNS `.local` names on every system
 
 ## Next: browsing and settings
 
 - [#1 Search games with `/`](https://github.com/arunoruto/rommate/issues/1) (keyboard)
 - [#2 Collections tab](https://github.com/arunoruto/rommate/issues/2): download a whole RomM collection at once
 - [#3 Settings tab](https://github.com/arunoruto/rommate/issues/3): change settings without editing `config.toml`
-- [#4 Prefer a local server URL](https://github.com/arunoruto/rommate/issues/4) when it is reachable
 
 ## Then: everything around the games
 

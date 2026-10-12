@@ -128,6 +128,7 @@ This writes `~/.config/rommate/config.toml` (readable only by you):
 
 ```toml
 server  = "https://romm.example.com"
+# local_server = "http://romm.local:8080"   # used whenever it answers (mDNS .local names work everywhere)
 token   = "rmm_..."
 profile = "es-de"        # es-de | emudeck | retrodeck
 # rom_dir = "/run/media/armada/Games/ROMs"   # default: taken from the profile
@@ -144,7 +145,8 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 | `emudeck`   | `~/Emulation/roms`                                         |
 | `retrodeck` | `~/retrodeck/roms`                                         |
 
-`ROMMATE_SERVER`, `ROMMATE_TOKEN`, `ROMMATE_ROM_DIR` and `ROMMATE_HINTS` override the config file.
+`ROMMATE_SERVER`, `ROMMATE_LOCAL_SERVER`, `ROMMATE_TOKEN`, `ROMMATE_ROM_DIR` and `ROMMATE_HINTS` override the config
+file.
 
 With `hints = "auto"` the footer shows controller buttons when rommate was launched through Steam (Game Mode or a
 non-Steam shortcut) and keyboard keys otherwise. With Steam Input a controller sends ordinary key presses, so rommate
@@ -257,7 +259,8 @@ docs/              website (Hugo + Hextra), deployed to GitHub Pages
 - [x] RomM client, ES-DE folder mapping and safe, resumable downloads
 - [x] Controller-friendly TUI with Library and Downloads tabs, CLI with `--json`
 - [x] Releases, install script and website
-- [ ] Search, Collections and Settings tabs, local server URL
+- [x] Local server address with mDNS `.local` support
+- [ ] Search, Collections and Settings tabs
 - [ ] BIOS / firmware sync and save sync
 - [ ] Mod manager, Decky plugin, other servers such as Retrom
 

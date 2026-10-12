@@ -9,6 +9,7 @@ for you, readable only by your user because it holds your API token.
 
 ```toml {filename="~/.config/rommate/config.toml"}
 server  = "https://romm.example.com"
+# local_server = "http://romm.local:8080"   # used whenever it answers
 token   = "rmm_…"
 profile = "es-de"        # es-de | emudeck | retrodeck
 # rom_dir = "/run/media/armada/Games/ROMs"   # default: taken from the profile
@@ -24,6 +25,7 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 | Key | Default | Description |
 |---|---|---|
 | `server` | | Your RomM address, for example `https://romm.example.com`. |
+| `local_server` | | Optional address of the same RomM server on your home network, e.g. `http://romm.local:8080`. See below. |
 | `token` | | A RomM Client API Token (`rmm_…`). |
 | `profile` | `es-de` | Which frontend's folder layout to use; see below. |
 | `rom_dir` | from the profile | The folder that holds one sub-folder per platform. |
@@ -49,9 +51,28 @@ These override the config file, which is handy for testing or for running rommat
 | Variable | Overrides |
 |---|---|
 | `ROMMATE_SERVER` | `server` |
+| `ROMMATE_LOCAL_SERVER` | `local_server` |
 | `ROMMATE_TOKEN` | `token` |
 | `ROMMATE_ROM_DIR` | `rom_dir` |
 | `ROMMATE_HINTS` | `hints` |
+
+## Local server
+
+At home, downloads are faster when they don't take the detour through the internet. Set `local_server` to the address
+of your RomM server on the local network, and keep `server` as the public address:
+
+```toml {filename="~/.config/rommate/config.toml"}
+server       = "https://romm.example.com"
+local_server = "http://romm.local:8080"
+```
+
+On every start, rommate checks whether the local server answers (it waits at most three seconds) and uses it if it
+does; otherwise it uses `server`. The TUI shows `· local` next to the server name while it uses the local address.
+You can also set it during setup with `rommate init --local-server http://romm.local:8080`.
+
+`.local` names work on every system, including Linux handhelds: rommate resolves them over mDNS itself, the same way
+Avahi and macOS do. When a host announces several addresses (common with Docker or Kubernetes), rommate tries them all
+at once and keeps the one that answers.
 
 ## Where rommate keeps its state
 

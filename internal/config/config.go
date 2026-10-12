@@ -16,6 +16,10 @@ import (
 type Config struct {
 	// Server is the RomM base URL, e.g. https://romm.example.com.
 	Server string `toml:"server"`
+	// LocalServer is an optional address of the same RomM server on the local
+	// network, e.g. http://sado.local:8080. It is used whenever it answers,
+	// with Server as the fallback. .local names are resolved via mDNS.
+	LocalServer string `toml:"local_server,omitempty"`
 	// Token is a RomM Client API Token (rmm_...). ROMMATE_TOKEN overrides it.
 	Token string `toml:"token"`
 	// Profile selects the frontend layout: es-de, emudeck or retrodeck.
@@ -78,6 +82,9 @@ func Load() (*Config, error) {
 	if v := os.Getenv("ROMMATE_SERVER"); v != "" {
 		cfg.Server = v
 	}
+	if v := os.Getenv("ROMMATE_LOCAL_SERVER"); v != "" {
+		cfg.LocalServer = v
+	}
 	if v := os.Getenv("ROMMATE_TOKEN"); v != "" {
 		cfg.Token = v
 	}
@@ -96,7 +103,7 @@ func Load() (*Config, error) {
 // Validate checks that the settings needed to talk to RomM are present.
 func (c *Config) Validate() error {
 	path, _ := Path()
-	if c.Server == "" {
+	if c.Server == "" && c.LocalServer == "" {
 		return fmt.Errorf("no RomM server configured: set `server` in %s or ROMMATE_SERVER", path)
 	}
 	if c.Token == "" {

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -19,10 +20,14 @@ type Client struct {
 	BaseURL string
 	Token   string
 	HTTP    *http.Client
+	// Local reports that BaseURL is the local server address chosen by
+	// NewWithFallback.
+	Local bool
 }
 
 // New returns a client for the given server URL and token.
 func New(baseURL, token string) *Client {
+	d := &dialer{Dialer: net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second}}
 	return &Client{
 		BaseURL: strings.TrimRight(baseURL, "/"),
 		Token:   token,
@@ -30,9 +35,40 @@ func New(baseURL, token string) *Client {
 		// bounded by their context instead.
 		HTTP: &http.Client{Transport: &http.Transport{
 			Proxy:                 http.ProxyFromEnvironment,
+			DialContext:           d.DialContext, // resolves .local names via mDNS
 			ResponseHeaderTimeout: 30 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			IdleConnTimeout:       90 * time.Second,
 		}},
 	}
+}
+
+// localProbeTimeout bounds the reachability check of the local server.
+const localProbeTimeout = 3 * time.Second
+
+// NewWithFallback returns a client for local when it answers RomM's heartbeat
+// quickly, and for public otherwise. With an empty local it is New(public).
+func NewWithFallback(ctx context.Context, public, local, token string) *Client {
+	if local != "" {
+		c := New(local, token)
+		probe, cancel := context.WithTimeout(ctx, localProbeTimeout)
+		err := c.Heartbeat(probe)
+		cancel()
+		if err == nil {
+			c.Local = true
+			return c
+		}
+		if public == "" {
+			return c
+		}
+	}
+	return New(public, token)
+}
+
+// Heartbeat checks that the server is a reachable RomM instance.
+func (c *Client) Heartbeat(ctx context.Context) error {
+	var out map[string]any
+	return c.getJSON(ctx, "/api/heartbeat", nil, &out)
 }
 
 // Platform is the subset of RomM's PlatformSchema rommate needs.

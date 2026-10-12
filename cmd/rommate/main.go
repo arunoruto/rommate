@@ -35,7 +35,7 @@ const usage = `rommate - sync games from RomM to your handheld
 
 Usage:
   rommate                         open the TUI
-  rommate init --server URL --token rmm_... [--profile es-de|emudeck|retrodeck] [--rom-dir DIR]
+  rommate init --server URL --token rmm_... [--local-server URL] [--profile es-de|emudeck|retrodeck] [--rom-dir DIR]
   rommate platforms               list platforms and their local folders
   rommate roms <platform>         list a platform's games (slug or id)
   rommate pull <rom-id>...        download games
@@ -118,7 +118,7 @@ func withEngine(fn func(*core.Engine, *config.Config) error) error {
 	}
 	defer store.Close()
 	return fn(&core.Engine{
-		Client: romm.New(cfg.Server, cfg.Token),
+		Client: romm.NewWithFallback(context.Background(), cfg.Server, cfg.LocalServer, cfg.Token),
 		Mapper: cfg.Mapper(),
 		Store:  store,
 	}, cfg)
@@ -159,6 +159,7 @@ func printJSON(v any) error {
 func cmdInit(args []string) error {
 	fs := flag.NewFlagSet("init", flag.ContinueOnError)
 	server := fs.String("server", "", "RomM server URL")
+	localServer := fs.String("local-server", "", "RomM address on the local network, used when reachable (e.g. http://sado.local:8080)")
 	token := fs.String("token", "", "RomM Client API Token (rmm_...)")
 	profile := fs.String("profile", "", "es-de, emudeck or retrodeck")
 	romDir := fs.String("rom-dir", "", "ROM root directory (default: from profile)")
@@ -179,6 +180,9 @@ func cmdInit(args []string) error {
 	if *token != "" {
 		cfg.Token = *token
 	}
+	if *localServer != "" {
+		cfg.LocalServer = strings.TrimRight(*localServer, "/")
+	}
 	if *profile != "" {
 		cfg.Profile = folders.Profile(*profile)
 	}
@@ -188,14 +192,18 @@ func cmdInit(args []string) error {
 	if err := cfg.Validate(); err != nil {
 		return err
 	}
-	if _, err := romm.New(cfg.Server, cfg.Token).Platforms(context.Background()); err != nil {
-		return fmt.Errorf("could not reach RomM with these settings: %w", err)
+	client := romm.NewWithFallback(context.Background(), cfg.Server, cfg.LocalServer, cfg.Token)
+	if _, err := client.Platforms(context.Background()); err != nil {
+		return fmt.Errorf("could not reach RomM at %s: %w", client.BaseURL, err)
 	}
 	if err := cfg.Save(); err != nil {
 		return err
 	}
 	path, _ := config.Path()
-	fmt.Printf("Saved %s\nROMs go to %s\n", path, cfg.Mapper().Root)
+	fmt.Printf("Saved %s\nConnected to %s\nROMs go to %s\n", path, client.BaseURL, cfg.Mapper().Root)
+	if cfg.LocalServer != "" && !client.Local {
+		fmt.Printf("Note: the local server %s did not answer; using %s for now.\n", cfg.LocalServer, client.BaseURL)
+	}
 	return nil
 }
 
@@ -463,15 +471,16 @@ func cmdMappings(args []string) error {
 
 // configInfo is the output of `rommate config`. It never contains the token.
 type configInfo struct {
-	Configured bool              `json:"configured"`
-	Problem    string            `json:"problem,omitempty"`
-	ConfigPath string            `json:"config_path"`
-	Server     string            `json:"server"`
-	TokenSet   bool              `json:"token_set"`
-	Profile    string            `json:"profile"`
-	ROMDir     string            `json:"rom_dir"`
-	Hints      string            `json:"hints"`
-	Folders    map[string]string `json:"folders,omitempty"`
+	Configured  bool              `json:"configured"`
+	Problem     string            `json:"problem,omitempty"`
+	ConfigPath  string            `json:"config_path"`
+	Server      string            `json:"server"`
+	LocalServer string            `json:"local_server,omitempty"`
+	TokenSet    bool              `json:"token_set"`
+	Profile     string            `json:"profile"`
+	ROMDir      string            `json:"rom_dir"`
+	Hints       string            `json:"hints"`
+	Folders     map[string]string `json:"folders,omitempty"`
 }
 
 // cmdConfig shows the effective configuration, including environment
@@ -496,14 +505,15 @@ func cmdConfig(args []string) error {
 		hints = "auto"
 	}
 	info := configInfo{
-		Configured: true,
-		ConfigPath: path,
-		Server:     cfg.Server,
-		TokenSet:   cfg.Token != "",
-		Profile:    string(cfg.Profile),
-		ROMDir:     cfg.Mapper().Root,
-		Hints:      hints,
-		Folders:    cfg.Folders,
+		Configured:  true,
+		ConfigPath:  path,
+		Server:      cfg.Server,
+		LocalServer: cfg.LocalServer,
+		TokenSet:    cfg.Token != "",
+		Profile:     string(cfg.Profile),
+		ROMDir:      cfg.Mapper().Root,
+		Hints:       hints,
+		Folders:     cfg.Folders,
 	}
 	if err := cfg.Validate(); err != nil {
 		info.Configured, info.Problem = false, err.Error()
@@ -518,6 +528,9 @@ func cmdConfig(args []string) error {
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(tw, "config file\t%s\n", info.ConfigPath)
 	fmt.Fprintf(tw, "server\t%s\n", info.Server)
+	if info.LocalServer != "" {
+		fmt.Fprintf(tw, "local server\t%s (used when reachable)\n", info.LocalServer)
+	}
 	fmt.Fprintf(tw, "token\t%s\n", token)
 	fmt.Fprintf(tw, "profile\t%s\n", info.Profile)
 	fmt.Fprintf(tw, "rom dir\t%s\n", info.ROMDir)

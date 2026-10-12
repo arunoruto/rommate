@@ -80,7 +80,11 @@ func (m *model) viewHeader() string {
 	if m.err != nil {
 		dot = sBad.Render("●")
 	}
-	right := dot + " " + sDim.Render(m.host)
+	host := m.host
+	if m.engine.Client.Local {
+		host += " · local"
+	}
+	right := dot + " " + sDim.Render(host)
 	if m.loading || len(m.active) > 0 {
 		right = m.spinner.View() + " " + right
 	}

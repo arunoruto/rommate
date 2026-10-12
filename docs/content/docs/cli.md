@@ -8,7 +8,7 @@ Every TUI action is also a command, which makes rommate easy to script over SSH 
 | Command | What it does |
 |---|---|
 | `rommate` | Open the TUI. |
-| `rommate init --server URL --token rmm_… [--profile P] [--rom-dir DIR]` | Save the connection and folder settings after checking them. |
+| `rommate init --server URL --token rmm_… [--local-server URL] [--profile P] [--rom-dir DIR]` | Save the connection and folder settings after checking them. |
 | `rommate platforms` | List the server's platforms and the folder each one maps to. |
 | `rommate roms <platform>` | List a platform's games; ✓ marks the ones on this device. `<platform>` can be the RomM slug, the folder name or the id. |
 | `rommate pull <rom-id>…` | Download games by id. |
