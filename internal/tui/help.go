@@ -38,6 +38,11 @@ var helpSections = []struct {
 		{"Download next / retry all failed", "y", "Y"},
 		{"Cancel, remove or dismiss", "x", "X"},
 	}},
+	{"Saves", []binding{
+		{"Sync saves now", "y", "Y"},
+		{"Resolve a conflict", "Enter", "A"},
+		{"Conflict: keep this device / keep RomM", "x  /  y", "X  /  Y"},
+	}},
 	{"General", []binding{
 		{"Show / hide this help", "?  or  F1  or  h", "Select"},
 		{"Quit (asks first)", "q  or  Ctrl+C", "Start"},

@@ -8,6 +8,15 @@ import (
 
 func (m *model) handleKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 	key := k.String()
+	if m.quitSyncing {
+		if key == "ctrl+c" {
+			return m, tea.Quit
+		}
+		return m, nil
+	}
+	if m.resolving != nil {
+		return m.resolveKey(key)
+	}
 	if m.quitting {
 		return m.quitKey(key)
 	}
@@ -27,7 +36,7 @@ func (m *model) handleKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.quitting = true
 			return m, nil
 		}
-		return m, tea.Quit
+		return m, m.quit()
 	case "?", "f1", "h":
 		m.help = true
 		return m, nil
@@ -39,8 +48,11 @@ func (m *model) handleKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	if m.tab == tabDownloads {
+	switch m.tab {
+	case tabDownloads:
 		return m.downloadsKey(key)
+	case tabSaves:
+		return m.savesKey(key)
 	}
 	return m.libraryKey(key)
 }
@@ -49,9 +61,11 @@ func (m *model) handleKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 // quits, anything else cancels.
 func (m *model) quitKey(key string) (tea.Model, tea.Cmd) {
 	switch key {
-	case "enter", "q", "ctrl+c":
+	case "ctrl+c":
 		m.cancelAll()
 		return m, tea.Quit
+	case "enter", "q":
+		return m, m.quit()
 	}
 	m.quitting = false
 	return m, nil

@@ -38,6 +38,8 @@ type Config struct {
 	// ConfirmQuit asks before the TUI quits (Start / q). Running downloads
 	// always ask.
 	ConfirmQuit bool `toml:"confirm_quit"`
+	// AutoSyncSaves syncs saves when the TUI starts and before it quits.
+	AutoSyncSaves bool `toml:"auto_sync_saves"`
 }
 
 // Dir returns rommate's config directory: $XDG_CONFIG_HOME/rommate, else
@@ -78,7 +80,7 @@ func Path() (string, error) {
 // Load reads the config file and applies environment overrides. A missing
 // file is not an error; Validate reports what is missing.
 func Load() (*Config, error) {
-	cfg := &Config{Profile: folders.ProfileESDE, ConfirmQuit: true}
+	cfg := &Config{Profile: folders.ProfileESDE, ConfirmQuit: true, AutoSyncSaves: true}
 	path, err := Path()
 	if err != nil {
 		return nil, err
@@ -103,6 +105,11 @@ func Load() (*Config, error) {
 	}
 	if v := os.Getenv("ROMMATE_GAMEPAD"); v != "" {
 		cfg.Gamepad = v
+	}
+	if v := os.Getenv("ROMMATE_AUTO_SYNC_SAVES"); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			cfg.AutoSyncSaves = b
+		}
 	}
 	if v := os.Getenv("ROMMATE_CONFIRM_QUIT"); v != "" {
 		if b, err := strconv.ParseBool(v); err == nil {

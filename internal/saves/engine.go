@@ -533,6 +533,10 @@ type Status struct {
 	Path     string `json:"path,omitempty"` // empty: no local save yet
 	Conflict bool   `json:"conflict"`
 	Problem  string `json:"problem,omitempty"`
+	// SyncedAt is when the save was last in sync with RomM (zero: never).
+	SyncedAt time.Time `json:"synced_at,omitempty"`
+	// ServerUpdatedAt is when the server's copy changed, for conflicts.
+	ServerUpdatedAt time.Time `json:"server_updated_at,omitempty"`
 }
 
 // Status lists the local save state of games, without contacting the server.
@@ -541,13 +545,14 @@ func (e *Engine) Status(games []Game) ([]Status, error) {
 	if err != nil {
 		return nil, err
 	}
-	inConflict := map[int]bool{}
+	inConflict := map[int]state.Conflict{}
 	for _, c := range conflicts {
-		inConflict[c.RomID] = true
+		inConflict[c.RomID] = c
 	}
 	var out []Status
 	for _, g := range games {
-		st := Status{RomID: g.RomID, Name: g.Name, Platform: g.Platform, Conflict: inConflict[g.RomID]}
+		c, conflict := inConflict[g.RomID]
+		st := Status{RomID: g.RomID, Name: g.Name, Platform: g.Platform, Conflict: conflict, ServerUpdatedAt: c.ServerUpdatedAt}
 		h := e.Handlers.For(g.Platform)
 		if h == nil {
 			st.Problem = "no supported emulator found for this platform"
@@ -555,6 +560,9 @@ func (e *Engine) Status(games []Game) ([]Status, error) {
 			continue
 		}
 		st.Emulator = h.ID()
+		if b, ok, _ := e.Store.GetBaseline(state.SaveKey{RomID: g.RomID, Slot: Slot, Emulator: h.ID()}); ok {
+			st.SyncedAt = b.SyncedAt
+		}
 		s, ok, err := h.Find(g)
 		switch {
 		case err != nil:

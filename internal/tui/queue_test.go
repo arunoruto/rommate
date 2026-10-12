@@ -85,11 +85,15 @@ func TestTabsAndQuitConfirm(t *testing.T) {
 		t.Fatal("] should switch to Downloads")
 	}
 	m.handleKey(keyRune(']'))
+	if m.tab != tabSaves {
+		t.Fatal("] should go to Saves")
+	}
+	m.handleKey(keyRune(']'))
 	if m.tab != tabLibrary {
 		t.Fatal("] should wrap back to Library")
 	}
 	m.handleKey(keyRune('['))
-	if m.tab != tabDownloads {
+	if m.tab != tabSaves {
 		t.Fatal("[ should go to the previous tab")
 	}
 

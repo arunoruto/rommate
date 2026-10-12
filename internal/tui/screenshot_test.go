@@ -13,6 +13,7 @@ import (
 
 	"github.com/arunoruto/rommate/internal/core"
 	"github.com/arunoruto/rommate/internal/romm"
+	"github.com/arunoruto/rommate/internal/saves"
 )
 
 // TestScreenshots renders TUI screens with sample data as ANSI files for the
@@ -32,6 +33,8 @@ func TestScreenshots(t *testing.T) {
 		"games":     shotGames(w, h),
 		"downloads": shotDownloads(w, h),
 		"help":      shotHelp(w, h+6),
+		"saves":     shotSaves(w, h),
+		"conflict":  shotConflict(w, h),
 	}
 	for name, m := range shots {
 		if err := os.WriteFile(filepath.Join(dir, name+".ansi"), []byte(m.View()), 0o644); err != nil {
@@ -127,5 +130,29 @@ func shotDownloads(w, h int) *model {
 func shotHelp(w, h int) *model {
 	m := shotModel(w, h)
 	m.help = true
+	return m
+}
+
+func shotSaves(w, h int) *model {
+	m := withSaves(shotModel(w, h))
+	m.tab = tabSaves
+	m.saveStatus = []saves.Status{
+		{RomID: 11, Name: "Animal Crossing: New Leaf", Emulator: "azahar", Path: "/var/home/armada/.local/share/azahar-emu/sdmc/Nintendo 3DS/…/title/00040000/00086300/data", SyncedAt: time.Now().Add(-2 * time.Hour)},
+		{RomID: 15, Name: "Pokémon Omega Ruby", Emulator: "azahar", Path: "/var/home/armada/.local/share/azahar-emu/sdmc/Nintendo 3DS/…/title/00040000/0011c400/data", SyncedAt: time.Now().Add(-5 * time.Minute)},
+		{RomID: 5, Name: "Pokémon FireRed Version", Emulator: "retroarch", Path: "/var/home/armada/.var/app/org.libretro.RetroArch/config/retroarch/saves/mGBA/Pokemon - FireRed Version (USA, Europe) (Rev 1).srm", SyncedAt: time.Now().Add(-20 * time.Minute)},
+		{RomID: 6, Name: "Super Mario Odyssey", Emulator: "eden", Path: "/var/home/armada/.local/share/eden/nand/user/save/0000000000000000/9E32BCFA61C0A24AC4482A10921DCFF5/0100000000010000", Conflict: true, ServerUpdatedAt: time.Now().Add(-12 * time.Minute)},
+		{RomID: 2, Name: "Super Mario Bros.", Emulator: "retroarch"},
+		{RomID: 3, Name: "The Legend of Zelda", Emulator: "retroarch", Path: "/var/home/armada/.var/app/org.libretro.RetroArch/config/retroarch/saves/Mesen/Legend of Zelda, The (USA) (Rev 1).srm", SyncedAt: time.Now().Add(-time.Hour)},
+		{RomID: 9, Name: "SSX Tricky", Problem: "no supported emulator found for this platform"},
+	}
+	m.savesCursor = 3
+	m.lastSync = &saves.Result{Uploaded: 1, Downloaded: 1, InSync: 4, Conflicts: 1}
+	return m
+}
+
+func shotConflict(w, h int) *model {
+	m := shotSaves(w, h)
+	st := m.saveStatus[3]
+	m.resolving = &st
 	return m
 }

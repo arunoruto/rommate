@@ -69,16 +69,12 @@ func main() {
 
 func run(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		return withEngine(func(e *core.Engine, cfg *config.Config) error {
-			return tui.Run(ctx, e, tui.Options{Hints: cfg.Hints, Gamepad: cfg.Gamepad, ConfirmQuit: cfg.ConfirmQuit})
-		})
+		return runTUI(ctx)
 	}
 	cmd, rest := args[0], args[1:]
 	switch cmd {
 	case "tui":
-		return withEngine(func(e *core.Engine, cfg *config.Config) error {
-			return tui.Run(ctx, e, tui.Options{Hints: cfg.Hints, Gamepad: cfg.Gamepad})
-		})
+		return runTUI(ctx)
 	case "init":
 		return cmdInit(rest)
 	case "platforms":
@@ -108,6 +104,19 @@ func run(ctx context.Context, args []string) error {
 	default:
 		return fmt.Errorf("unknown command %q\n\n%s", cmd, usage)
 	}
+}
+
+// runTUI starts the TUI with the settings from the config.
+func runTUI(ctx context.Context) error {
+	return withEngine(func(e *core.Engine, cfg *config.Config) error {
+		return tui.Run(ctx, e, tui.Options{
+			Hints:         cfg.Hints,
+			Gamepad:       cfg.Gamepad,
+			ConfirmQuit:   cfg.ConfirmQuit,
+			AutoSyncSaves: cfg.AutoSyncSaves,
+			Saves:         func() (*saves.Engine, []saves.Game, error) { return saveEngine(e) },
+		})
+	})
 }
 
 // withEngine loads config, opens state and builds the engine.

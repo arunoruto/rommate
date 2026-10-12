@@ -1,6 +1,10 @@
 package tui
 
-import "os"
+import (
+	"os"
+
+	"github.com/arunoruto/rommate/internal/saves"
+)
 
 // inputMode decides whether the footer shows keyboard keys or controller
 // buttons.
@@ -29,6 +33,11 @@ type Options struct {
 	Gamepad string
 	// ConfirmQuit asks before quitting. Running downloads always ask.
 	ConfirmQuit bool
+	// Saves builds the save sync engine and the games to sync; nil hides
+	// the Saves tab.
+	Saves func() (*saves.Engine, []saves.Game, error)
+	// AutoSyncSaves syncs saves on start and before quitting.
+	AutoSyncSaves bool
 }
 
 // steamEnv lists variables Steam or gamescope set for launched programs.

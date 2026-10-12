@@ -27,11 +27,17 @@ func (m *model) View() string {
 	switch m.tab {
 	case tabDownloads:
 		list, details = m.viewQueue, m.viewQueueDetails
+	case tabSaves:
+		list, details = m.viewSaves, m.viewSavesDetails
 	default:
 		list, details = m.viewList, m.viewDetails
 	}
 	var panels string
 	switch {
+	case m.quitSyncing:
+		panels = m.viewQuitSync(m.width, panelH)
+	case m.resolving != nil:
+		panels = m.viewResolve(m.width, panelH)
 	case m.quitting:
 		panels = m.viewQuit(m.width, panelH)
 	case m.help:
@@ -68,6 +74,13 @@ func (m *model) viewHeader() string {
 				label += " !"
 			}
 		}
+		if t == tabSaves {
+			if m.savesSyncing {
+				label += " …"
+			} else if n := m.conflictCount(); n > 0 {
+				label += fmt.Sprintf(" !%d", n)
+			}
+		}
 		if t == m.tab {
 			left += " " + sTabActive.Render(label)
 		} else {
@@ -101,8 +114,14 @@ func (m *model) viewFooter() string {
 	quit := hint{k("q", "Start"), "Quit"}
 	hints := []hint{{k("Enter", "A"), "Open"}, tabs, quit}
 	switch {
+	case m.quitSyncing:
+		hints = []hint{{"Ctrl+C", "Quit now"}}
+	case m.resolving != nil:
+		hints = []hint{{k("x", "X"), "Keep this device"}, {k("y", "Y"), "Keep RomM"}, {k("Esc", "B"), "Cancel"}}
 	case m.quitting:
 		hints = []hint{{k("Enter", "A"), "Quit"}, {k("Esc", "B"), "Cancel"}}
+	case m.tab == tabSaves:
+		hints = m.savesHints(tabs, quit)
 	case m.help:
 		hints = []hint{{k("Esc", "B"), "Close help"}}
 	case m.tab == tabDownloads:

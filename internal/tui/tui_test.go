@@ -13,6 +13,7 @@ import (
 	"github.com/arunoruto/rommate/internal/core"
 	"github.com/arunoruto/rommate/internal/folders"
 	"github.com/arunoruto/rommate/internal/romm"
+	"github.com/arunoruto/rommate/internal/saves"
 )
 
 func testModel(w, h int) *model {
@@ -59,6 +60,46 @@ func TestViewFits(t *testing.T) {
 		},
 		"empty": func(m *model) *model { m.platforms = nil; return m },
 		"help":  func(m *model) *model { m.help = true; return m },
+		"downloads": func(m *model) *model {
+			m = withRoms(m)
+			m.tab = tabDownloads
+			m.failed = []failedJob{{rom: m.roms[0], err: "HTTP 500: an extremely long server error message that needs wrapping"}}
+			m.finished = []finishedJob{{rom: m.roms[0]}}
+			return m
+		},
+		"downloads-empty": func(m *model) *model { m.tab = tabDownloads; return m },
+		"quit": func(m *model) *model {
+			m = withRoms(m)
+			m.quitting = true
+			return m
+		},
+		"saves": func(m *model) *model {
+			m = withSaves(m)
+			m.tab = tabSaves
+			m.savesCursor = 1
+			return m
+		},
+		"saves-empty": func(m *model) *model {
+			m = withSaves(m)
+			m.tab = tabSaves
+			m.saveStatus = nil
+			return m
+		},
+		"saves-resolve": func(m *model) *model {
+			m = withSaves(m)
+			m.tab = tabSaves
+			st := m.saveStatus[1]
+			m.resolving = &st
+			return m
+		},
+		"saves-quit-sync": func(m *model) *model {
+			m = withSaves(m)
+			m.quitSyncing = true
+			return m
+		},
+	}
+	if len(states) < 13 {
+		t.Fatalf("only %d layout states registered", len(states))
 	}
 	for name, setup := range states {
 		for _, sz := range sizes {
@@ -141,4 +182,18 @@ func TestHelpHintAlwaysBottomRight(t *testing.T) {
 			t.Errorf("width %d: primary hint dropped: %q", w, footer)
 		}
 	}
+}
+
+func withSaves(m *model) *model {
+	m.savesFn = func() (*saves.Engine, []saves.Game, error) { return nil, nil, errors.New("no engine in tests") }
+	m.savesLoaded, m.autoSync = true, true
+	m.saveStatus = []saves.Status{
+		{RomID: 5, Name: "Pokémon FireRed Version", Emulator: "retroarch", Path: "/saves/mGBA/FireRed.srm", SyncedAt: time.Now().Add(-time.Hour)},
+		{RomID: 6, Name: "Super Mario Odyssey", Emulator: "eden", Path: "/nand/user/save/0/U/0100000000010000", Conflict: true, ServerUpdatedAt: time.Now().Add(-10 * time.Minute)},
+		{RomID: 2, Name: "Super Mario Bros.", Emulator: "retroarch"},
+		{RomID: 9, Name: "Some PS2 Game", Problem: "no supported emulator found for this platform"},
+	}
+	m.lastSync = &saves.Result{Uploaded: 1, InSync: 2, Conflicts: 1}
+	m.lastSyncAt = time.Now()
+	return m
 }

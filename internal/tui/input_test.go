@@ -69,7 +69,7 @@ func TestControllerPressMapsToKeysAndDropsSteamEcho(t *testing.T) {
 	// A deliberate key press later still works.
 	m.padSeen["]"] = time.Now().Add(-time.Second)
 	m.Update(keyRune(']'))
-	if m.tab != tabLibrary {
+	if m.tab != tabSaves {
 		t.Fatal("keyboard ] after the echo window should switch tabs")
 	}
 }

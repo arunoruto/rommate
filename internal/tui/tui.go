@@ -17,6 +17,7 @@ import (
 
 	"github.com/arunoruto/rommate/internal/core"
 	"github.com/arunoruto/rommate/internal/gamepad"
+	"github.com/arunoruto/rommate/internal/saves"
 )
 
 // Run starts the TUI.
@@ -24,6 +25,7 @@ func Run(ctx context.Context, e *core.Engine, opts Options) error {
 	m := newModel(ctx, e)
 	m.input = defaultInputMode(opts)
 	m.confirmQuit = opts.ConfirmQuit
+	m.savesFn, m.autoSync = opts.Saves, opts.AutoSyncSaves
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithContext(ctx))
 	startGamepad(ctx, opts, p)
 	_, err := p.Run()
@@ -46,6 +48,7 @@ type tab int
 const (
 	tabLibrary tab = iota
 	tabDownloads
+	tabSaves
 	numTabs
 )
 
@@ -53,6 +56,8 @@ func (t tab) title() string {
 	switch t {
 	case tabDownloads:
 		return "Downloads"
+	case tabSaves:
+		return "Saves"
 	default:
 		return "Library"
 	}
@@ -97,6 +102,20 @@ type model struct {
 	input       inputMode
 	helpTop     int                  // first visible help line when the help is scrolled
 	padSeen     map[string]time.Time // last controller press per key, see echoOfPad
+
+	// Saves tab.
+	savesFn      func() (*saves.Engine, []saves.Game, error)
+	autoSync     bool
+	saveStatus   []saves.Status
+	savesLoaded  bool
+	savesErr     error
+	savesSyncing bool
+	savesCursor  int
+	savesOffset  int
+	resolving    *saves.Status // conflict dialog
+	quitSyncing  bool          // syncing saves before quitting
+	lastSync     *saves.Result
+	lastSyncAt   time.Time
 
 	toast   toast
 	toastID int
@@ -193,10 +212,20 @@ func (m *model) setToast(text string, kind toastKind) tea.Cmd {
 }
 
 func (m *model) Init() tea.Cmd {
-	return tea.Batch(m.loadPlatforms, m.loadCounts, m.waitEvent, m.spinner.Tick)
+	cmds := []tea.Cmd{m.loadPlatforms, m.loadCounts, m.waitEvent, m.spinner.Tick}
+	if m.savesFn != nil {
+		cmds = append(cmds, m.loadSaveStatus)
+		if m.autoSync {
+			cmds = append(cmds, m.syncSaves(false))
+		}
+	}
+	return tea.Batch(cmds...)
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if cmd, ok := m.handleSavesMsg(msg); ok {
+		return m, cmd
+	}
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
