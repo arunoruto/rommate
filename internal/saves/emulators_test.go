@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -20,6 +21,11 @@ func mkfile(t *testing.T, path string, data string) {
 
 func fakeHome(t *testing.T) string {
 	t.Helper()
+	// The handlers know the save locations of Linux emulators only, and the
+	// expected paths are Linux paths.
+	if runtime.GOOS == "windows" {
+		t.Skip("emulator save locations are Linux-only")
+	}
 	// Handlers resolve symlinks (macOS: /var -> /private/var), so use the
 	// resolved path as home too.
 	h, err := filepath.EvalSymlinks(t.TempDir())
@@ -27,6 +33,7 @@ func fakeHome(t *testing.T) string {
 		t.Fatal(err)
 	}
 	t.Setenv("HOME", h)
+	t.Setenv("USERPROFILE", h)
 	return h
 }
 
