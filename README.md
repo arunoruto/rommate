@@ -63,7 +63,8 @@ Why another sync tool?
 
 * **Correct folders out of the box.** RomM and ES-DE name some platforms differently (`3ds` vs `n3ds`, `ngc` vs
   `gc`, `sms` vs `mastersystem`, …). rommate ships a mapping for every platform both projects know, and reads your
-  ROM directory from ES-DE's own settings.
+  ROM directory from ES-DE's own settings. Cover art lands in ES-DE's media folder too.
+* **Saves follow you.** Emulator saves sync with RomM, with a choice whenever both sides changed.
 * **Made for a controller.** The TUI uses only D-pad, A/B/X/Y, L1/R1 and Start, so it works in Game Mode through
   Steam Input as well as in Desktop Mode.
 * **Nothing running in the background.** One small static binary (~11 MB) that only runs while you use it.
@@ -136,6 +137,7 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 # gamepad = "auto"       # read controllers directly on Linux: auto | off
 # confirm_quit = true    # ask before quitting the TUI
 # auto_sync_saves = true # sync saves when the TUI starts and before it quits
+# covers = true          # download cover art into ES-DE's media folder (media_dir to override)
 
 # Override the folder for individual RomM platform slugs
 [folders]
@@ -168,7 +170,7 @@ Press `?` (or `F1`, `h`, or Select on a controller) inside the TUI to see all sh
 
 | Action                        | Keyboard                    | Controller (Steam Input → key) |
 |-------------------------------|-----------------------------|--------------------------------|
-| Switch tab (Library/Downloads/Saves) | `[` `]` or `Tab`     | L1 R1 → `[` `]`                |
+| Switch tab (Library/Downloads/Saves/Settings) | `[` `]` or `Tab` | L1 R1 → `[` `]`       |
 | Move up / down                | `↑` `↓` or `k` `j`          | D-pad ↑ ↓ → `↑` `↓`            |
 | Previous / next page          | `←` `→` or `PgUp` `PgDn`    | D-pad ← → → `←` `→`            |
 | First / last entry            | `Home` / `End`              | –                              |
@@ -177,11 +179,13 @@ Press `?` (or `F1`, `h`, or Select on a controller) inside the TUI to see all sh
 | Download all missing games    | `y`                         | Y → `y`                        |
 | Remove game (press twice)     | `x`                         | X → `x`                        |
 | Reload from server            | `r`                         | –                              |
+| Search all platforms / filter games | `/`, then `Enter` (keep) or `Esc` (clear) | –          |
 | Downloads: retry failed       | `Enter`                     | A                              |
 | Downloads: next / retry all   | `y`                         | Y                              |
 | Downloads: cancel / dismiss   | `x`                         | X                              |
 | Saves: sync now               | `y`                         | Y                              |
 | Saves: resolve a conflict     | `Enter`, then `x` (keep device) / `y` (keep RomM) | A, then X / Y |
+| Settings: change option       | `Enter` or `←` `→`          | A or D-pad ← →                 |
 | Show / hide help              | `?`, `F1` or `h`            | Select → `F1`                  |
 | Quit (asks first, see `confirm_quit`; syncs saves, see `auto_sync_saves`) | `q` or `Ctrl+C` | Start → `q` |
 
@@ -190,9 +194,11 @@ Press `?` (or `F1`, `h`, or Select on a controller) inside the TUI to see all sh
 ```sh
 rommate platforms                 # platforms on the server and their local folder
 rommate roms 3ds                  # games of a platform (slug, folder or id); ✓ = downloaded
+rommate search zelda              # find games on every platform
 rommate pull 9 12                 # download games by id
 rommate pull --platform n3ds      # download every missing game of a platform
 rommate status                    # what's on this device
+rommate covers                    # add missing cover art for downloaded games
 rommate remove 9                  # delete a downloaded game
 rommate mappings                  # platforms whose ES-DE folder differs from the RomM slug
 rommate config                    # effective configuration (never shows the token)
@@ -267,10 +273,13 @@ docs/              website (Hugo + Hextra), deployed to GitHub Pages
 - [x] Controller-friendly TUI with Library and Downloads tabs, CLI with `--json`
 - [x] Releases, install script and website
 - [x] Local server address with mDNS `.local` support
-- [ ] Search, Collections and Settings tabs
+- [x] Search and Settings tab
+- [x] Cover art for ES-DE
+- [x] Decky plugin with save sync when a game closes
+- [ ] Collections tab, gamelist.xml
 - [x] Save sync (RetroArch, melonDS, Azahar, PPSSPP, Eden family) with conflict resolution
 - [ ] BIOS / firmware sync
-- [ ] Mod manager, Decky plugin, other servers such as Retrom
+- [ ] Mod manager, other servers such as Retrom
 
 The full roadmap lives on the [website](https://arunoruto.github.io/rommate/docs/roadmap/), and every item has an
 [issue](https://github.com/arunoruto/rommate/issues?q=is%3Aissue+label%3Aroadmap).

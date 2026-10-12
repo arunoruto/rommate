@@ -19,24 +19,25 @@ share ideas.
 - Local server address with automatic fallback and mDNS `.local` names on every system
 - Direct controller input on Linux: works with Steam's default gamepad layout, no key mapping needed
 - Save sync for RetroArch, melonDS, Azahar, PPSSPP and the Eden family, with a Saves tab, conflict resolution and backups
+- Decky plugin for Game Mode: browse and download, open the TUI as a Steam shortcut, sync saves when a game closes
+- Search with `/`: every platform through RomM, or filter a platform's games
+- Settings tab that saves to `config.toml`
+- Cover art for ES-DE
 
-## Next: browsing and settings
+## Next: browsing
 
-- [#1 Search games with `/`](https://github.com/arunoruto/rommate/issues/1) (keyboard)
 - [#2 Collections tab](https://github.com/arunoruto/rommate/issues/2): download a whole RomM collection at once
-- [#3 Settings tab](https://github.com/arunoruto/rommate/issues/3): change settings without editing `config.toml`
 
 ## Then: everything around the games
 
 - [#5 BIOS / firmware sync](https://github.com/arunoruto/rommate/issues/5)
 - [#6 Save sync](https://github.com/arunoruto/rommate/issues/6): more emulators (Dolphin, DuckStation, Cemu, PS2 memory cards) and syncing when a game closes in the Decky plugin
 - [#11 Multi-file games](https://github.com/arunoruto/rommate/issues/11): `.cue`/`.bin` checks and `.m3u` playlists
-- [#10 Cover art and gamelist.xml](https://github.com/arunoruto/rommate/issues/10) for ES-DE
+- [#10 gamelist.xml](https://github.com/arunoruto/rommate/issues/10): descriptions, ratings and more media for ES-DE
 
 ## Later
 
 - [#7 Mod manager](https://github.com/arunoruto/rommate/issues/7) for emulators that support mods, linked by title ID
-- [#8 Decky plugin](https://github.com/arunoruto/rommate/issues/8) for Game Mode on the Steam Deck
 - [#12 Other servers](https://github.com/arunoruto/rommate/issues/12) such as Retrom
 - [#13 Packages](https://github.com/arunoruto/rommate/issues/13) for nixpkgs, Flathub and the AUR
 

@@ -11,10 +11,15 @@ Every TUI action is also a command, which makes rommate easy to script over SSH 
 | `rommate init --server URL --token rmm_… [--local-server URL] [--profile P] [--rom-dir DIR]` | Save the connection and folder settings after checking them. |
 | `rommate platforms` | List the server's platforms and the folder each one maps to. |
 | `rommate roms <platform>` | List a platform's games; ✓ marks the ones on this device. `<platform>` can be the RomM slug, the folder name or the id. |
-| `rommate pull <rom-id>…` | Download games by id. |
+| `rommate search <term> [--limit N]` | Find games on every platform by name. |
+| `rommate pull <rom-id>…` | Download games by id, with their cover art. |
 | `rommate pull --platform <platform>` | Download every game of a platform you don't have yet. |
 | `rommate remove <rom-id>…` | Delete downloaded games from the device. |
 | `rommate status` | List what rommate has downloaded and flag files that went missing. |
+| `rommate covers` | Download missing cover art for every downloaded game. |
+| `rommate saves` | Show the save state of every downloaded game. See [Save sync](../saves). |
+| `rommate saves sync` | Sync saves with RomM. |
+| `rommate saves resolve <rom-id> --keep local\|server` | Settle a save conflict. |
 | `rommate mappings` | Show the platforms whose ES-DE folder differs from the RomM slug. |
 | `rommate config` | Show the effective configuration, including environment overrides, and whether it is complete. The token is never printed. |
 | `rommate gamepad` | List the controllers rommate can read and print each button press (Linux). |

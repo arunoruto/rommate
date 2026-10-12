@@ -17,6 +17,8 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 # gamepad = "auto"       # read controllers directly on Linux: auto | off
 # confirm_quit = true    # ask before quitting the TUI
 # auto_sync_saves = true # sync saves when the TUI starts and before it quits
+# covers = true          # download cover art into ES-DE's media folder
+# media_dir = "~/ES-DE/downloaded_media"   # default: taken from ES-DE / the profile
 
 # Use a different folder for individual RomM platforms
 [folders]
@@ -24,6 +26,8 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 ```
 
 ## Settings
+
+Most of these can also be changed in the TUI's **Settings** tab.
 
 | Key | Default | Description |
 |---|---|---|
@@ -35,6 +39,8 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 | `hints` | `auto` | Footer hints in the TUI: `auto`, `keyboard` or `controller`. |
 | `gamepad` | `auto` | Read game controllers directly on Linux (`auto`) or only use keys (`off`). |
 | `auto_sync_saves` | `true` | Sync saves when the TUI starts and before it quits. See [Save sync](../saves). |
+| `covers` | `true` | Download each game's cover into the frontend's media folder. See [Folder mapping](../folders#cover-art). |
+| `media_dir` | from ES-DE / the profile | The frontend's media folder (ES-DE's `downloaded_media`). |
 | `confirm_quit` | `true` | Ask before quitting the TUI with Start or `q`. With running downloads it always asks. |
 | `[folders]` | | Per-platform folder overrides, keyed by RomM slug. |
 
@@ -64,6 +70,8 @@ These override the config file, which is handy for testing or for running rommat
 | `ROMMATE_GAMEPAD` | `gamepad` |
 | `ROMMATE_AUTO_SYNC_SAVES` | `auto_sync_saves` (`true` / `false`) |
 | `ROMMATE_CONFIRM_QUIT` | `confirm_quit` (`true` / `false`) |
+| `ROMMATE_COVERS` | `covers` (`true` / `false`) |
+| `ROMMATE_MEDIA_DIR` | `media_dir` |
 
 ## Local server
 

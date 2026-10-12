@@ -25,9 +25,28 @@ just as well with a keyboard.
   it. Press **Y** to sync now, or **A** on a conflict to choose which version to keep. See
   [Save sync](../saves).
 
+**Settings**
+: Change rommate's options with the controller: footer hints, asking before quitting, automatic save sync, cover art
+  and direct controller input. Changes are saved to `config.toml` right away, keeping your comments. Below the options
+  you see the server, ROM and media folders, the config file and the version.
+
 While something downloads, a bar at the bottom shows its progress on every tab, like Steam does.
 
 ![The Downloads tab with one running, two queued, one failed and two finished downloads](/images/screenshots/downloads.png)
+
+## Search
+
+Press `/` to search (keyboard only).
+
+- **On the platform list**, `/` searches games on **every platform** through RomM. Results show their platform, and
+  you download them as usual.
+- **Inside a platform**, `/` filters its games as you type. Every word must match the game name or file name, in any
+  order: `zelda link` finds *A Link Between Worlds*.
+
+`Enter` keeps the results and moves to the list; `Esc` clears the search. With a search active, **Y** downloads all
+missing games that match.
+
+![Searching every platform for zelda](/images/screenshots/search.png)
 
 ## Shortcuts
 
@@ -44,12 +63,15 @@ Press `?` or **Select** to see these in the app. The footer always shows the act
 | Download all missing games of a platform | `y` | Y |
 | Remove a game (press twice) | `x` | X |
 | Reload from the server | `r` | |
+| Search every platform / filter a platform's games | `/` | |
+| Search: keep results / clear | `Enter` / `Esc` | |
 | Downloads: retry a failed download | `Enter` | A |
 | Downloads: download next / retry all failed | `y` | Y |
 | Downloads: cancel, remove or dismiss | `x` | X |
 | Saves: sync now | `y` | Y |
 | Saves: resolve a conflict | `Enter` | A |
 | Conflict: keep this device / keep RomM | `x` / `y` | X / Y |
+| Settings: change the selected option | `Enter` or `←` `→` | A or D-pad ← → |
 | Show or hide help | `?`, `F1` or `h` | Select |
 | Quit (asks first, see `confirm_quit`) | `q` or `Ctrl+C` | Start |
 
