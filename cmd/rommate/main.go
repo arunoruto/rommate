@@ -40,10 +40,12 @@ Usage:
   rommate init --server URL --token rmm_... [--local-server URL] [--profile es-de|emudeck|retrodeck] [--rom-dir DIR]
   rommate platforms               list platforms and their local folders
   rommate roms <platform>         list a platform's games (slug or id)
+  rommate search <term>           find games on every platform by name
   rommate pull <rom-id>...        download games
   rommate pull --platform <p>     download every missing game of a platform
   rommate remove <rom-id>...      delete downloaded games
   rommate status                  show downloaded games
+  rommate covers                  download missing cover art for downloaded games
   rommate mappings                show RomM platforms whose ES-DE folder differs
   rommate config                  show the current configuration (never the token)
   rommate gamepad                 show detected controllers and test their buttons (Linux)
@@ -81,6 +83,10 @@ func run(ctx context.Context, args []string) error {
 		return cmdPlatforms(ctx, rest)
 	case "roms":
 		return cmdRoms(ctx, rest)
+	case "search":
+		return cmdSearch(ctx, rest)
+	case "covers":
+		return cmdCovers(ctx, rest)
 	case "pull":
 		return cmdPull(ctx, rest)
 	case "remove", "rm":
@@ -109,14 +115,41 @@ func run(ctx context.Context, args []string) error {
 // runTUI starts the TUI with the settings from the config.
 func runTUI(ctx context.Context) error {
 	return withEngine(func(e *core.Engine, cfg *config.Config) error {
+		e.Warn = nil // stderr would garble the TUI
 		return tui.Run(ctx, e, tui.Options{
 			Hints:         cfg.Hints,
 			Gamepad:       cfg.Gamepad,
 			ConfirmQuit:   cfg.ConfirmQuit,
 			AutoSyncSaves: cfg.AutoSyncSaves,
 			Saves:         func() (*saves.Engine, []saves.Game, error) { return saveEngine(e) },
+			About:         about(e, cfg),
+			SaveSetting:   config.SetValue,
 		})
 	})
+}
+
+// about lists what the Settings tab shows about this installation.
+func about(e *core.Engine, cfg *config.Config) [][2]string {
+	path, _ := config.Path()
+	server := e.Client.BaseURL
+	if e.Client.Local {
+		server += " (local)"
+	}
+	out := [][2]string{{"Server", server}}
+	if cfg.LocalServer != "" && !e.Client.Local {
+		out = append(out, [2]string{"At home", cfg.LocalServer})
+	}
+	media := e.Mapper.Media
+	if !cfg.Covers {
+		media += " (covers off)"
+	}
+	return append(out,
+		[2]string{"ROM folder", e.Mapper.Root},
+		[2]string{"Media", media},
+		[2]string{"Profile", string(cfg.Profile)},
+		[2]string{"Config", path},
+		[2]string{"Version", version},
+	)
 }
 
 // withEngine loads config, opens state and builds the engine.
@@ -141,6 +174,8 @@ func withEngine(fn func(*core.Engine, *config.Config) error) error {
 		Client: romm.NewWithFallback(context.Background(), cfg.Server, cfg.LocalServer, cfg.Token),
 		Mapper: cfg.Mapper(),
 		Store:  store,
+		Covers: cfg.Covers,
+		Warn:   func(msg string) { fmt.Fprintln(os.Stderr, "rommate: "+msg) },
 	}, cfg)
 }
 
@@ -299,6 +334,80 @@ func cmdRoms(ctx context.Context, args []string) error {
 			fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", r.ID, mark, r.Title(), humanize.IBytes(uint64(r.FSSizeBytes)))
 		}
 		return tw.Flush()
+	})
+}
+
+func cmdSearch(ctx context.Context, args []string) error {
+	fs, asJSON := newFlags("search")
+	limit := fs.Int("limit", 50, "maximum number of results")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(pos) == 0 {
+		return errors.New("usage: rommate search <term>")
+	}
+	return withEngine(func(e *core.Engine, _ *config.Config) error {
+		roms, err := e.Search(ctx, strings.Join(pos, " "), *limit)
+		if err != nil {
+			return err
+		}
+		if *asJSON {
+			return printJSON(roms)
+		}
+		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		fmt.Fprintln(tw, "ID\t\tNAME\tPLATFORM\tSIZE")
+		for _, r := range roms {
+			mark := " "
+			if r.Installed {
+				mark = "✓"
+			}
+			fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\n", r.ID, mark, r.Title(), r.PlatformSlug, humanize.IBytes(uint64(r.FSSizeBytes)))
+		}
+		return tw.Flush()
+	})
+}
+
+func cmdCovers(ctx context.Context, args []string) error {
+	fs, asJSON := newFlags("covers")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(pos) > 0 {
+		return fmt.Errorf("covers takes no arguments, got %q", pos)
+	}
+	return withEngine(func(e *core.Engine, _ *config.Config) error {
+		enc := json.NewEncoder(os.Stdout)
+		added, failed := 0, 0
+		err := e.FetchCovers(ctx, func(r core.CoverResult) {
+			switch {
+			case r.Error != "":
+				failed++
+			case r.Path != "":
+				added++
+			}
+			if *asJSON {
+				_ = enc.Encode(r)
+				return
+			}
+			switch {
+			case r.Error != "":
+				fmt.Fprintf(os.Stderr, "✗ %s: %s\n", r.Name, r.Error)
+			case r.Path != "":
+				fmt.Printf("+ %s\n", r.Name)
+			}
+		})
+		if err != nil {
+			return err
+		}
+		if !*asJSON {
+			fmt.Printf("Covers: %d added, %d failed\n", added, failed)
+		}
+		if failed > 0 {
+			return fmt.Errorf("%d covers failed", failed)
+		}
+		return nil
 	})
 }
 
@@ -500,6 +609,8 @@ type configInfo struct {
 	Profile     string            `json:"profile"`
 	ROMDir      string            `json:"rom_dir"`
 	Hints       string            `json:"hints"`
+	Covers      bool              `json:"covers"`
+	MediaDir    string            `json:"media_dir"`
 	Folders     map[string]string `json:"folders,omitempty"`
 }
 
@@ -533,6 +644,8 @@ func cmdConfig(args []string) error {
 		Profile:     string(cfg.Profile),
 		ROMDir:      cfg.Mapper().Root,
 		Hints:       hints,
+		Covers:      cfg.Covers,
+		MediaDir:    cfg.Mapper().Media,
 		Folders:     cfg.Folders,
 	}
 	if err := cfg.Validate(); err != nil {
@@ -555,6 +668,11 @@ func cmdConfig(args []string) error {
 	fmt.Fprintf(tw, "profile\t%s\n", info.Profile)
 	fmt.Fprintf(tw, "rom dir\t%s\n", info.ROMDir)
 	fmt.Fprintf(tw, "hints\t%s\n", info.Hints)
+	if info.Covers {
+		fmt.Fprintf(tw, "covers\t%s\n", info.MediaDir)
+	} else {
+		fmt.Fprintf(tw, "covers\toff\n")
+	}
 	for slug, folder := range info.Folders {
 		fmt.Fprintf(tw, "folder override\t%s → %s\n", slug, folder)
 	}

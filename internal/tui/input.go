@@ -38,6 +38,10 @@ type Options struct {
 	Saves func() (*saves.Engine, []saves.Game, error)
 	// AutoSyncSaves syncs saves on start and before quitting.
 	AutoSyncSaves bool
+	// About lists label/value pairs shown in the Settings tab.
+	About [][2]string
+	// SaveSetting stores a changed setting in config.toml (nil: not saved).
+	SaveSetting func(key string, value any) error
 }
 
 // steamEnv lists variables Steam or gamescope set for launched programs.

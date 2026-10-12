@@ -100,6 +100,9 @@ func Aliases() []Alias {
 type Mapper struct {
 	Root      string
 	Overrides map[string]string
+	// Media is the frontend's media root (ES-DE's downloaded_media). Empty
+	// disables media such as cover art.
+	Media string
 }
 
 // Folder returns the folder name (relative to Root) for a RomM platform slug.
@@ -117,6 +120,15 @@ func (m Mapper) Folder(slug string) string {
 // Dir returns the absolute directory for a RomM platform slug.
 func (m Mapper) Dir(slug string) string {
 	return filepath.Join(m.Root, m.Folder(slug))
+}
+
+// MediaDir returns the frontend media directory of a platform, or "" when no
+// media root is set. ES-DE keeps covers in <media>/<system>/covers.
+func (m Mapper) MediaDir(slug string) string {
+	if m.Media == "" {
+		return ""
+	}
+	return filepath.Join(m.Media, m.Folder(slug))
 }
 
 // Profile names a frontend layout. All supported frontends use ES-DE system
@@ -145,8 +157,30 @@ func DefaultRoot(p Profile) string {
 	}
 }
 
+// DefaultMediaRoot returns ES-DE's downloaded_media directory for a profile:
+// ES-DE's MediaDirectory setting when set (EmuDeck sets it), else the
+// frontend's default location.
+func DefaultMediaRoot(p Profile) string {
+	home, _ := os.UserHomeDir()
+	if p == ProfileRetroDECK {
+		return filepath.Join(home, "retrodeck", "downloaded_media")
+	}
+	if dir := esdeSetting(home, "MediaDirectory"); dir != "" {
+		return dir
+	}
+	if p == ProfileEmuDeck {
+		return filepath.Join(home, "Emulation", "tools", "downloaded_media")
+	}
+	return filepath.Join(home, "ES-DE", "downloaded_media")
+}
+
 // esdeROMDirectory reads the ROMDirectory setting from ES-DE's settings file.
 func esdeROMDirectory(home string) string {
+	return esdeSetting(home, "ROMDirectory")
+}
+
+// esdeSetting reads a string setting from ES-DE's settings file.
+func esdeSetting(home, name string) string {
 	data, err := os.ReadFile(filepath.Join(home, "ES-DE", "settings", "es_settings.xml"))
 	if err != nil {
 		return ""
@@ -163,7 +197,7 @@ func esdeROMDirectory(home string) string {
 		return ""
 	}
 	for _, s := range doc.Strings {
-		if s.Name == "ROMDirectory" && s.Value != "" {
+		if s.Name == name && s.Value != "" {
 			return strings.Replace(s.Value, "~", home, 1)
 		}
 	}

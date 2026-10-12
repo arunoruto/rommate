@@ -53,6 +53,11 @@ func (m *model) handlePad(b gamepad.Button) (tea.Model, tea.Cmd) {
 		m.padSeen = map[string]time.Time{}
 	}
 	m.padSeen[k.String()] = time.Now()
+	if m.searching && k.Type == tea.KeyRunes {
+		// Buttons that send letters must not type into the search line:
+		// they end typing and act on the list instead.
+		m.searching = false
+	}
 	return m.handleKey(k)
 }
 

@@ -26,6 +26,8 @@ func Run(ctx context.Context, e *core.Engine, opts Options) error {
 	m.input = defaultInputMode(opts)
 	m.confirmQuit = opts.ConfirmQuit
 	m.savesFn, m.autoSync = opts.Saves, opts.AutoSyncSaves
+	m.hints, m.gamepadSetting = opts.Hints, opts.Gamepad
+	m.about, m.saveSetting = opts.About, opts.SaveSetting
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithContext(ctx))
 	startGamepad(ctx, opts, p)
 	_, err := p.Run()
@@ -40,6 +42,7 @@ type screen int
 const (
 	screenPlatforms screen = iota
 	screenRoms
+	screenSearch // games matching a search on every platform
 )
 
 // tab is a top-level page in the header tab bar.
@@ -49,6 +52,7 @@ const (
 	tabLibrary tab = iota
 	tabDownloads
 	tabSaves
+	tabSettings
 	numTabs
 )
 
@@ -58,6 +62,8 @@ func (t tab) title() string {
 		return "Downloads"
 	case tabSaves:
 		return "Saves"
+	case tabSettings:
+		return "Settings"
 	default:
 		return "Library"
 	}
@@ -103,6 +109,13 @@ type model struct {
 	helpTop     int                  // first visible help line when the help is scrolled
 	padSeen     map[string]time.Time // last controller press per key, see echoOfPad
 
+	// Search (/): query filters the games of a platform, or searches every
+	// platform on screenSearch.
+	searching  bool // the search line has focus
+	query      string
+	searchSeq  int // debounce counter
+	searchFrom int // platform cursor to return to
+
 	// Saves tab.
 	savesFn      func() (*saves.Engine, []saves.Game, error)
 	autoSync     bool
@@ -116,6 +129,13 @@ type model struct {
 	quitSyncing  bool          // syncing saves before quitting
 	lastSync     *saves.Result
 	lastSyncAt   time.Time
+
+	// Settings tab.
+	setCursor      int
+	hints          string // footer hints setting: auto, keyboard or controller
+	gamepadSetting string
+	about          [][2]string
+	saveSetting    func(key string, value any) error
 
 	toast   toast
 	toastID int
@@ -226,6 +246,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if cmd, ok := m.handleSavesMsg(msg); ok {
 		return m, cmd
 	}
+	if cmd, ok := m.handleSearchMsg(msg); ok {
+		return m, cmd
+	}
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
@@ -292,10 +315,7 @@ func (m *model) markInstalled(id int, installed bool) {
 }
 
 func (m *model) listLen() int {
-	if m.screen == screenPlatforms {
-		return len(m.platforms)
-	}
-	return len(m.roms)
+	return len(m.rows())
 }
 
 // key returns the keyboard or controller name of a binding for the current

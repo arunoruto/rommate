@@ -32,6 +32,8 @@ var helpSections = []struct {
 		{"Download all missing games", "y", "Y"},
 		{"Remove game (press twice)", "x", "X"},
 		{"Reload from server", "r", ""},
+		{"Search all platforms / filter games", "/", ""},
+		{"Search: done / cancel", "Enter  /  Esc", ""},
 	}},
 	{"Downloads", []binding{
 		{"Retry failed download", "Enter", "A"},
@@ -42,6 +44,9 @@ var helpSections = []struct {
 		{"Sync saves now", "y", "Y"},
 		{"Resolve a conflict", "Enter", "A"},
 		{"Conflict: keep this device / keep RomM", "x  /  y", "X  /  Y"},
+	}},
+	{"Settings", []binding{
+		{"Change the selected setting", "Enter  or  ← →", "A  or  D-pad ← →"},
 	}},
 	{"General", []binding{
 		{"Show / hide this help", "?  or  F1  or  h", "Select"},

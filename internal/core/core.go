@@ -22,6 +22,11 @@ type Engine struct {
 	Client *romm.Client
 	Mapper folders.Mapper
 	Store  *state.Store
+	// Covers downloads cover art into the frontend's media folder.
+	Covers bool
+	// Warn, if set, receives problems that don't fail an operation, such as a
+	// cover that could not be fetched.
+	Warn func(msg string)
 }
 
 // EventType identifies an Event.
@@ -97,6 +102,21 @@ func (e *Engine) Roms(ctx context.Context, platformID int) ([]RomInfo, error) {
 	return out, nil
 }
 
+// Search finds games on every platform by name, with their local install
+// state. At most limit results are returned.
+func (e *Engine) Search(ctx context.Context, term string, limit int) ([]RomInfo, error) {
+	roms, err := e.Client.Search(ctx, term, limit)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]RomInfo, 0, len(roms))
+	for _, r := range roms {
+		path := e.LocalPath(r)
+		out = append(out, RomInfo{Rom: r, Path: path, Installed: e.isComplete(r, path)})
+	}
+	return out, nil
+}
+
 // LocalPath is where a ROM is stored: the file itself for single-file ROMs,
 // or a folder named after the ROM for multi-file ROMs.
 func (e *Engine) LocalPath(r romm.Rom) string {
@@ -145,6 +165,7 @@ func (e *Engine) Pull(ctx context.Context, r romm.Rom, emit Emit) error {
 		if err := e.record(r, path); err != nil {
 			return e.fail(emit, r, err)
 		}
+		e.cover(ctx, r, path)
 		emit(Event{Type: EventSkipped, RomID: r.ID, Name: r.Title(), Path: path})
 		return nil
 	}
@@ -169,6 +190,7 @@ func (e *Engine) Pull(ctx context.Context, r romm.Rom, emit Emit) error {
 	if err := e.record(r, path); err != nil {
 		return e.fail(emit, r, err)
 	}
+	e.cover(ctx, r, path)
 	emit(Event{Type: EventDone, RomID: r.ID, Name: r.Title(), Path: path, Done: done, Total: done})
 	return nil
 }
@@ -182,6 +204,7 @@ func (e *Engine) Remove(r romm.Rom) error {
 	if err := os.RemoveAll(path); err != nil {
 		return err
 	}
+	e.removeCover(r, path)
 	return e.Store.Delete(r.ID)
 }
 
@@ -208,6 +231,14 @@ func (e *Engine) Status() ([]StatusEntry, error) {
 // DownloadedCounts returns how many games are downloaded per platform slug.
 func (e *Engine) DownloadedCounts() (map[string]int, error) {
 	return e.Store.CountByPlatform()
+}
+
+// cover fetches the cover of a pulled game. A missing cover never fails the
+// download; `rommate covers` retries later.
+func (e *Engine) cover(ctx context.Context, r romm.Rom, path string) {
+	if _, err := e.FetchCover(ctx, r, path); err != nil && e.Warn != nil {
+		e.Warn(fmt.Sprintf("cover of %s: %v", r.Title(), err))
+	}
 }
 
 func (e *Engine) record(r romm.Rom, path string) error {

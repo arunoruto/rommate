@@ -21,13 +21,23 @@ import (
 // with Range support, like RomM behind nginx.
 type fakeRomM struct {
 	roms     map[int]romm.Rom
-	contents map[int][]byte // file id -> bytes
-	ranges   int            // number of Range requests seen
+	contents map[int][]byte    // file id -> bytes
+	ranges   int               // number of Range requests seen
+	assets   map[string][]byte // /assets/... path -> bytes
 }
 
 func (f *fakeRomM) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") != "Bearer rmm_test" {
 		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if strings.HasPrefix(r.URL.Path, "/assets/") {
+		data, ok := f.assets[r.URL.Path]
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		_, _ = w.Write(data)
 		return
 	}
 	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/roms/"), "/")

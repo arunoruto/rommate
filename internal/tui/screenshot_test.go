@@ -35,6 +35,8 @@ func TestScreenshots(t *testing.T) {
 		"help":      shotHelp(w, h+6),
 		"saves":     shotSaves(w, h),
 		"conflict":  shotConflict(w, h),
+		"search":    shotSearch(w, h),
+		"settings":  shotSettings(w, h),
 	}
 	for name, m := range shots {
 		if err := os.WriteFile(filepath.Join(dir, name+".ansi"), []byte(m.View()), 0o644); err != nil {
@@ -154,5 +156,42 @@ func shotConflict(w, h int) *model {
 	m := shotSaves(w, h)
 	st := m.saveStatus[3]
 	m.resolving = &st
+	return m
+}
+
+func shotSearch(w, h int) *model {
+	m := shotModel(w, h)
+	m.screen, m.query = screenSearch, "zelda"
+	pids := map[string]int{"gba": 1, "3ds": 3, "nes": 5, "switch": 6}
+	ext := map[string]string{"gba": ".gba", "3ds": ".3ds", "nes": ".nes", "switch": ".xci"}
+	game := func(id int, slug, name string, size int64, installed bool) core.RomInfo {
+		r := romm.Rom{ID: id, PlatformID: pids[slug], PlatformSlug: slug, Name: name, FSName: name + " (Europe)" + ext[slug], FSSizeBytes: size}
+		return core.RomInfo{Rom: r, Installed: installed, Path: m.engine.LocalPath(r)}
+	}
+	m.roms = []core.RomInfo{
+		game(3, "nes", "The Legend of Zelda", 128<<10, true),
+		game(31, "nes", "Zelda II: The Adventure of Link", 256<<10, false),
+		game(32, "gba", "The Legend of Zelda: The Minish Cap", 16<<20, false),
+		game(17, "3ds", "The Legend of Zelda: A Link Between Worlds", 1<<30, false),
+		game(18, "3ds", "The Legend of Zelda: Ocarina of Time 3D", 512<<20, true),
+		game(33, "switch", "The Legend of Zelda: Tears of the Kingdom", 16<<30, false),
+	}
+	m.cursor = 2
+	return m
+}
+
+func shotSettings(w, h int) *model {
+	m, _ := withSettings(shotModel(w, h))
+	m.engine.Covers = true
+	m.setCursor = 3
+	m.about = [][2]string{
+		{"Server", "https://romm.example.com"},
+		{"At home", "http://romm.local:8080"},
+		{"ROM folder", "/run/media/armada/Games/ROMs"},
+		{"Media", "/var/home/armada/ES-DE/downloaded_media"},
+		{"Profile", "es-de"},
+		{"Config", "/var/home/armada/.config/rommate/config.toml"},
+		{"Version", "v0.7.0"},
+	}
 	return m
 }

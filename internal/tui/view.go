@@ -29,6 +29,8 @@ func (m *model) View() string {
 		list, details = m.viewQueue, m.viewQueueDetails
 	case tabSaves:
 		list, details = m.viewSaves, m.viewSavesDetails
+	case tabSettings:
+		list, details = m.viewSettings, m.viewSettingsDetails
 	default:
 		list, details = m.viewList, m.viewDetails
 	}
@@ -122,13 +124,27 @@ func (m *model) viewFooter() string {
 		hints = []hint{{k("Enter", "A"), "Quit"}, {k("Esc", "B"), "Cancel"}}
 	case m.tab == tabSaves:
 		hints = m.savesHints(tabs, quit)
+	case m.tab == tabSettings:
+		hints = m.settingsHints(tabs, quit)
 	case m.help:
 		hints = []hint{{k("Esc", "B"), "Close help"}}
 	case m.tab == tabDownloads:
 		hints = m.queueHints(tabs, quit)
-	case m.screen == screenRoms:
-		hints = []hint{{k("Enter", "A"), "Download"}, {k("y", "Y"), "All missing"},
-			{k("x", "X"), "Remove"}, {k("Esc", "B"), "Back"}, tabs, quit}
+	case m.searching:
+		hints = []hint{{"Enter", "Done"}, {"Esc", "Cancel"}, {"↑ ↓", "Move"}}
+	case m.screen != screenPlatforms:
+		all := "All missing"
+		if m.filtering() {
+			all = "All matching"
+		}
+		hints = []hint{{k("Enter", "A"), "Download"}, {k("y", "Y"), all},
+			{k("x", "X"), "Remove"}, {k("Esc", "B"), "Back"}}
+		if m.input != inputController && !m.filtering() {
+			hints = append(hints, hint{"/", "Filter"})
+		}
+		hints = append(hints, tabs, quit)
+	case m.input != inputController:
+		hints = []hint{hints[0], {"/", "Search"}, tabs, quit}
 	}
 
 	// The help hint is pinned to the bottom-right corner and always shown;
@@ -179,21 +195,30 @@ func (m *model) viewList(w, h int) string {
 	inner := w - 2
 	rows := h - 2
 	title := "Platforms"
-	if m.screen == screenRoms {
+	switch m.screen {
+	case screenRoms:
 		title = "Platforms › " + m.platform.DisplayName()
+	case screenSearch:
+		title = "Search all platforms"
 	}
 
 	var body []string
+	if m.filtering() {
+		body = append(body, m.viewSearchLine(inner))
+		rows--
+	}
+	visible := m.rows()
 	info := ""
 	switch {
 	case m.err != nil:
-		body = m.viewError(inner)
+		body = append(body, m.viewError(inner)...)
 	case m.loading:
-		body = []string{"", " " + m.spinner.View() + sDim.Render(" Loading…")}
-	case m.listLen() == 0:
-		body = []string{"", sDim.Render("  Nothing here yet.")}
+		body = append(body, "", " "+m.spinner.View()+sDim.Render(" Loading…"))
+	case len(visible) == 0:
+		body = append(body, "", sDim.Render("  "+m.emptyText()))
 	default:
-		n := m.listLen()
+		n := len(visible)
+		m.cursor = min(m.cursor, n-1)
 		if m.cursor < m.offset {
 			m.offset = m.cursor
 		}
@@ -201,11 +226,42 @@ func (m *model) viewList(w, h int) string {
 			m.offset = m.cursor - rows + 1
 		}
 		for i := m.offset; i < min(m.offset+rows, n); i++ {
-			body = append(body, m.viewRow(i, inner))
+			body = append(body, m.viewRow(visible[i], i == m.cursor, inner))
 		}
 		info = fmt.Sprintf("%d / %d", m.cursor+1, n)
+		if n < len(m.roms) && m.screen == screenRoms {
+			info += fmt.Sprintf(" of %d", len(m.roms))
+		}
 	}
 	return box(title, info, body, w, h, true)
+}
+
+// viewSearchLine renders the query, with a cursor while typing.
+func (m *model) viewSearchLine(w int) string {
+	q := m.query
+	if m.searching {
+		q += "▏"
+	}
+	label := " / "
+	if m.screen == screenSearch && q == "" {
+		return sAccent.Render(label) + sDim.Render("type a game name")
+	}
+	q = ansi.TruncateLeft(q, max(lipgloss.Width(q)-(w-4), 0), "…")
+	if m.searching {
+		return sAccent.Render(label) + sText.Render(q)
+	}
+	return sDim.Render(label) + sAccent.Render(q)
+}
+
+// emptyText explains an empty list.
+func (m *model) emptyText() string {
+	switch {
+	case m.screen == screenSearch && len([]rune(strings.TrimSpace(m.query))) < searchMinChars:
+		return "Search every platform by game name."
+	case m.screen == screenSearch, m.query != "":
+		return "No games match “" + strings.TrimSpace(m.query) + "”."
+	}
+	return "Nothing here yet."
 }
 
 func (m *model) viewError(w int) []string {
@@ -216,8 +272,8 @@ func (m *model) viewError(w int) []string {
 	return append(lines, "", sDim.Render("  Press ")+sKeyCap.Render("r")+sDim.Render(" to retry"))
 }
 
-// viewRow renders list row i at width w.
-func (m *model) viewRow(i, w int) string {
+// viewRow renders entry i of the current list at width w.
+func (m *model) viewRow(i int, selected bool, w int) string {
 	var icon, iconPlain, left, right string
 	var rightStyle lipgloss.Style
 	if m.screen == screenPlatforms {
@@ -239,10 +295,12 @@ func (m *model) viewRow(i, w int) string {
 		iconPlain, icon = m.romIcon(r)
 		left = r.Title()
 		right = humanize.IBytes(uint64(r.FSSizeBytes))
+		if m.screen == screenSearch {
+			right = r.PlatformSlug + "  " + right
+		}
 		rightStyle = sDim
 	}
 
-	selected := i == m.cursor
 	marker := " "
 	if selected {
 		marker = "›"
@@ -275,11 +333,11 @@ func (m *model) romIcon(r core.RomInfo) (string, string) {
 func (m *model) viewDetails(w, h int) string {
 	inner := w - 2
 	var body []string
-	if !m.loading && m.err == nil && m.listLen() > 0 {
+	if rows := m.rows(); !m.loading && m.err == nil && m.cursor < len(rows) {
 		if m.screen == screenPlatforms {
-			body = m.platformDetails(m.platforms[m.cursor], inner)
+			body = m.platformDetails(m.platforms[rows[m.cursor]], inner)
 		} else {
-			body = m.romDetails(m.roms[m.cursor], inner)
+			body = m.romDetails(m.roms[rows[m.cursor]], inner)
 		}
 	}
 	return box("Details", "", body, w, h, false)
@@ -334,6 +392,9 @@ func (m *model) romDetails(r core.RomInfo, w int) []string {
 		status = sDim.Render("Not downloaded")
 	}
 	lines = append(lines, kv("Status", status, w)...)
+	if m.screen == screenSearch {
+		lines = append(lines, kv("Platform", m.platformName(r.PlatformID, r.PlatformSlug), w)...)
+	}
 	lines = append(lines, kv("Size", humanize.IBytes(uint64(r.FSSizeBytes)), w)...)
 	if len(r.Files) > 1 {
 		lines = append(lines, kv("Files", fmt.Sprintf("%d", len(r.Files)), w)...)

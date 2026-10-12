@@ -110,6 +110,9 @@ type Rom struct {
 	FSSizeBytes      int64     `json:"fs_size_bytes"`
 	HasMultipleFiles bool      `json:"has_multiple_files"`
 	Files            []RomFile `json:"files"`
+	// PathCoverLarge is the server path of the cover image, e.g.
+	// /assets/romm/resources/roms/6/9/cover/big.png?ts=…; empty without one.
+	PathCoverLarge string `json:"path_cover_large,omitempty"`
 }
 
 // Title returns the matched game name, falling back to the file name.
@@ -213,6 +216,33 @@ func (c *Client) Roms(ctx context.Context, platformID int) ([]Rom, error) {
 			return all, nil
 		}
 	}
+}
+
+// Search finds ROMs on every platform whose name matches term, best matches
+// first as RomM orders them, at most limit.
+func (c *Client) Search(ctx context.Context, term string, limit int) ([]Rom, error) {
+	q := url.Values{}
+	q.Set("search_term", term)
+	q.Set("with_files", "true")
+	q.Set("limit", strconv.Itoa(limit))
+	var p page[Rom]
+	err := c.getJSON(ctx, "/api/roms", q, &p)
+	return p.Items, err
+}
+
+// Asset opens a server resource such as a cover image, given its server path
+// (any query string is dropped). The caller must close the body.
+func (c *Client) Asset(ctx context.Context, path string) (io.ReadCloser, error) {
+	path, _, _ = strings.Cut(path, "?")
+	req, err := c.newRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.do(req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Body, nil
 }
 
 // Rom fetches a single ROM by id.

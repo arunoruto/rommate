@@ -23,6 +23,9 @@ func (m *model) handleKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.help {
 		return m.helpKey(key)
 	}
+	if m.searching && m.tab == tabLibrary {
+		return m.searchKey(k)
+	}
 	if key != "x" {
 		m.confirmID = 0
 	}
@@ -53,6 +56,8 @@ func (m *model) handleKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.downloadsKey(key)
 	case tabSaves:
 		return m.savesKey(key)
+	case tabSettings:
+		return m.settingsKey(key)
 	}
 	return m.libraryKey(key)
 }
@@ -127,8 +132,19 @@ func (m *model) libraryKey(key string) (tea.Model, tea.Cmd) {
 	if m.moveCursor(key, &m.cursor, n) {
 		return m, nil
 	}
+	rows := m.rows()
 	switch key {
+	case "/":
+		return m.startSearch()
 	case "esc", "backspace":
+		if m.screen == screenSearch {
+			m.leaveSearch()
+			break
+		}
+		if m.screen == screenRoms && m.query != "" {
+			m.clearFilter()
+			break
+		}
 		if m.screen == screenRoms {
 			m.romCursor[m.platform.ID] = m.cursor
 			m.screen, m.roms, m.err = screenPlatforms, nil, nil
@@ -140,11 +156,11 @@ func (m *model) libraryKey(key string) (tea.Model, tea.Cmd) {
 			break
 		}
 		if m.screen == screenPlatforms {
-			m.platform = m.platforms[m.cursor]
+			m.platform = m.platforms[rows[m.cursor]]
 			m.screen, m.loading = screenRoms, true
 			return m, m.loadRoms(m.platform.ID)
 		}
-		r := m.roms[m.cursor]
+		r := m.roms[rows[m.cursor]]
 		switch {
 		case r.Installed:
 			return m, m.setToast(r.Title()+" is already downloaded", toastInfo)
@@ -153,13 +169,14 @@ func (m *model) libraryKey(key string) (tea.Model, tea.Cmd) {
 		}
 		return m, tea.Batch(m.enqueue(r), m.setToast("Queued "+r.Title(), toastInfo))
 	case "y":
-		// Download every missing game of the current platform.
-		if m.screen != screenRoms || m.loading {
+		// Download every missing game of the platform, or of the matches.
+		if m.screen == screenPlatforms || m.loading {
 			break
 		}
 		var cmds []tea.Cmd
 		count := 0
-		for _, r := range m.roms {
+		for _, i := range rows {
+			r := m.roms[i]
 			if !r.Installed && !m.isBusy(r.ID) {
 				cmds = append(cmds, m.enqueue(r))
 				count++
@@ -170,10 +187,10 @@ func (m *model) libraryKey(key string) (tea.Model, tea.Cmd) {
 		}
 		return m, tea.Batch(append(cmds, m.setToast(fmt.Sprintf("Queued %d games", count), toastInfo))...)
 	case "x":
-		if m.screen != screenRoms || n == 0 {
+		if m.screen == screenPlatforms || n == 0 {
 			break
 		}
-		r := &m.roms[m.cursor]
+		r := &m.roms[rows[m.cursor]]
 		if !r.Installed || m.isBusy(r.ID) {
 			break
 		}
@@ -190,8 +207,12 @@ func (m *model) libraryKey(key string) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(m.loadCounts, m.setToast("Removed "+r.Title(), toastInfo))
 	case "r":
 		m.loading, m.err = true, nil
-		if m.screen == screenPlatforms {
+		switch m.screen {
+		case screenPlatforms:
 			return m, tea.Batch(m.loadPlatforms, m.loadCounts)
+		case screenSearch:
+			m.loading = false
+			return m, m.runSearch()
 		}
 		return m, m.loadRoms(m.platform.ID)
 	}

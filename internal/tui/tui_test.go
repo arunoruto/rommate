@@ -97,8 +97,32 @@ func TestViewFits(t *testing.T) {
 			m.quitSyncing = true
 			return m
 		},
+		"filter": func(m *model) *model {
+			m = withRoms(m)
+			m.searching, m.query = true, "a very long filter that does not fit on a small screen at all zel"
+			return m
+		},
+		"filter-empty": func(m *model) *model {
+			m = withRoms(m)
+			m.query = "nothing matches this"
+			return m
+		},
+		"search": func(m *model) *model {
+			m.screen, m.searching, m.query = screenSearch, true, "mario"
+			m.roms = withRoms(testModel(10, 10)).roms
+			return m
+		},
+		"search-empty": func(m *model) *model {
+			m.screen, m.searching = screenSearch, true
+			return m
+		},
+		"settings": func(m *model) *model {
+			m, _ = withSettings(m)
+			m.setCursor = len(settingsList) - 1
+			return m
+		},
 	}
-	if len(states) < 13 {
+	if len(states) < 18 {
 		t.Fatalf("only %d layout states registered", len(states))
 	}
 	for name, setup := range states {

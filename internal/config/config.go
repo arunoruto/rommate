@@ -40,6 +40,10 @@ type Config struct {
 	ConfirmQuit bool `toml:"confirm_quit"`
 	// AutoSyncSaves syncs saves when the TUI starts and before it quits.
 	AutoSyncSaves bool `toml:"auto_sync_saves"`
+	// Covers downloads each game's cover into the frontend's media folder.
+	Covers bool `toml:"covers"`
+	// MediaDir overrides the frontend's media folder (ES-DE: downloaded_media).
+	MediaDir string `toml:"media_dir,omitempty"`
 }
 
 // Dir returns rommate's config directory: $XDG_CONFIG_HOME/rommate, else
@@ -80,7 +84,7 @@ func Path() (string, error) {
 // Load reads the config file and applies environment overrides. A missing
 // file is not an error; Validate reports what is missing.
 func Load() (*Config, error) {
-	cfg := &Config{Profile: folders.ProfileESDE, ConfirmQuit: true, AutoSyncSaves: true}
+	cfg := &Config{Profile: folders.ProfileESDE, ConfirmQuit: true, AutoSyncSaves: true, Covers: true}
 	path, err := Path()
 	if err != nil {
 		return nil, err
@@ -109,6 +113,14 @@ func Load() (*Config, error) {
 	if v := os.Getenv("ROMMATE_AUTO_SYNC_SAVES"); v != "" {
 		if b, err := strconv.ParseBool(v); err == nil {
 			cfg.AutoSyncSaves = b
+		}
+	}
+	if v := os.Getenv("ROMMATE_MEDIA_DIR"); v != "" {
+		cfg.MediaDir = v
+	}
+	if v := os.Getenv("ROMMATE_COVERS"); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			cfg.Covers = b
 		}
 	}
 	if v := os.Getenv("ROMMATE_CONFIRM_QUIT"); v != "" {
@@ -155,7 +167,11 @@ func (c *Config) Mapper() folders.Mapper {
 	if root == "" {
 		root = folders.DefaultRoot(c.Profile)
 	}
-	return folders.Mapper{Root: root, Overrides: c.Folders}
+	media := c.MediaDir
+	if media == "" {
+		media = folders.DefaultMediaRoot(c.Profile)
+	}
+	return folders.Mapper{Root: root, Overrides: c.Folders, Media: media}
 }
 
 // Save writes the config file with owner-only permissions (it holds a token).
