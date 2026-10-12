@@ -45,3 +45,32 @@ func TestStoreRoundTrip(t *testing.T) {
 		t.Fatal("entry still there after Delete")
 	}
 }
+
+func TestSyncTables(t *testing.T) {
+	s, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	if v, _ := s.GetValue("device_id"); v != "" {
+		t.Fatal("unset value should be empty")
+	}
+	_ = s.SetValue("device_id", "abc")
+	if v, _ := s.GetValue("device_id"); v != "abc" {
+		t.Fatalf("device_id = %q", v)
+	}
+	k := SaveKey{RomID: 5, Slot: "autosave", Emulator: "retroarch"}
+	_ = s.PutBaseline(Baseline{SaveKey: k, Hash: "h1", SyncedAt: time.Unix(10, 0)})
+	_ = s.PutBaseline(Baseline{SaveKey: k, Hash: "h2", SyncedAt: time.Unix(20, 0)})
+	if b, ok, _ := s.GetBaseline(k); !ok || b.Hash != "h2" {
+		t.Fatalf("baseline = %+v %v", b, ok)
+	}
+	_ = s.PutConflict(Conflict{SaveKey: k, ServerSaveID: 9, ServerUpdatedAt: time.Unix(30, 0), LocalHash: "l", DetectedAt: time.Unix(40, 0)})
+	if cs, _ := s.Conflicts(); len(cs) != 1 || cs[0].ServerSaveID != 9 {
+		t.Fatalf("conflicts = %+v", cs)
+	}
+	_ = s.DeleteConflict(k)
+	if cs, _ := s.Conflicts(); len(cs) != 0 {
+		t.Fatal("conflict not deleted")
+	}
+}

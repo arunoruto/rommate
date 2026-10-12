@@ -8,6 +8,10 @@ linters:
         - (*os.File).Close
         - (net.Conn).Close
         - (net.Listener).Close
+        - (*archive/zip.ReadCloser).Close
+        # Best-effort cleanup of temporary files.
+        - os.Remove
+        - os.RemoveAll
         - (*database/sql.DB).Close
         - (*database/sql.Rows).Close
         - (*github.com/arunoruto/rommate/internal/state.Store).Close

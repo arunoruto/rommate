@@ -38,6 +38,28 @@ CREATE TABLE IF NOT EXISTS roms (
 	downloaded_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS roms_platform ON roms(platform_slug);
+CREATE TABLE IF NOT EXISTS kv (
+	key   TEXT PRIMARY KEY,
+	value TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS save_baselines (
+	rom_id    INTEGER NOT NULL,
+	slot      TEXT NOT NULL,
+	emulator  TEXT NOT NULL,
+	hash      TEXT NOT NULL,
+	synced_at INTEGER NOT NULL,
+	PRIMARY KEY (rom_id, slot, emulator)
+);
+CREATE TABLE IF NOT EXISTS save_conflicts (
+	rom_id            INTEGER NOT NULL,
+	slot              TEXT NOT NULL,
+	emulator          TEXT NOT NULL,
+	server_save_id    INTEGER NOT NULL,
+	server_updated_at INTEGER NOT NULL,
+	local_hash        TEXT NOT NULL,
+	detected_at       INTEGER NOT NULL,
+	PRIMARY KEY (rom_id, slot, emulator)
+);
 `
 
 // Open opens (and creates if needed) the database in dir.
