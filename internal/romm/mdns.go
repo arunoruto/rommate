@@ -71,10 +71,15 @@ func lookupMDNS(ctx context.Context, host string) ([]netip.Addr, error) {
 		return nil, errors.New("mDNS: no usable network interface")
 	}
 
+	defer func() {
+		for _, c := range conns {
+			_ = c.Close()
+		}
+	}()
+
 	answers := make(chan []netip.Addr, 64)
 	var wg sync.WaitGroup
 	for _, c := range conns {
-		defer c.Close()
 		_ = c.SetDeadline(deadline)
 		sendQuery(c, query, ifaces)
 		wg.Add(1)

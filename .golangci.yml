@@ -6,6 +6,8 @@ linters:
       exclude-functions:
         - (io.Closer).Close
         - (*os.File).Close
+        - (net.Conn).Close
+        - (net.Listener).Close
         - (*database/sql.DB).Close
         - (*database/sql.Rows).Close
         - (*github.com/arunoruto/rommate/internal/state.Store).Close
