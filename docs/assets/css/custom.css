@@ -66,3 +66,16 @@
   display: block;
   opacity: 1;
 }
+
+/* Landing page: hero buttons with breathing room (works whether or not
+   Markdown wraps the shortcodes in a paragraph). */
+.rm-buttons,
+.rm-buttons > p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0;
+}
+.rm-buttons {
+  margin-bottom: 1.5rem;
+}

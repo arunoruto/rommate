@@ -25,7 +25,7 @@ layout: hextra-home
 {{< /hextra/hero-subtitle >}}
 </div>
 
-<div class="hx:mb-6 hx:flex hx:flex-wrap hx:gap-3">
+<div class="rm-buttons">
 {{< hextra/hero-button text="Get started" link="docs/getting-started" >}}
 {{< hextra/hero-button text="Download" link="https://github.com/arunoruto/rommate/releases/latest" style="background: transparent; color: inherit; box-shadow: inset 0 0 0 1px rgba(123,97,255,.55);" >}}
 </div>
