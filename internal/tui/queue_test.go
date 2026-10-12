@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/arunoruto/rommate/internal/core"
 	"github.com/arunoruto/rommate/internal/romm"
 )
@@ -92,15 +94,21 @@ func TestTabsAndQuitConfirm(t *testing.T) {
 	}
 
 	m.enqueue(rom(1, "A"))
-	if _, cmd := m.handleKey(keyRune('q')); cmd == nil || !m.quitArmed {
-		t.Fatal("first q with downloads should ask for confirmation")
+	if _, cmd := m.handleKey(keyRune('q')); cmd != nil || !m.quitting {
+		t.Fatal("q with downloads running should open the quit dialog")
 	}
-	if !strings.Contains(m.toast.text, "press q again") {
-		t.Fatalf("toast = %q", m.toast.text)
+	if !strings.Contains(m.View(), "1 download is still running") {
+		t.Fatal("quit dialog should mention the running download")
 	}
-	m.handleKey(keyDown()) // any other key disarms
-	if m.quitArmed {
-		t.Fatal("other key should disarm quit")
+	m.handleKey(tea.KeyMsg{Type: tea.KeyEsc}) // B cancels
+	if m.quitting {
+		t.Fatal("Esc should close the quit dialog")
+	}
+	if _, cmd := m.handleKey(keyRune('q')); cmd != nil {
+		t.Fatal("q should reopen the dialog, not quit")
+	}
+	if _, cmd := m.handleKey(tea.KeyMsg{Type: tea.KeyEnter}); cmd == nil {
+		t.Fatal("A in the quit dialog should quit")
 	}
 }
 
@@ -122,5 +130,18 @@ func TestDownloadBar(t *testing.T) {
 	idle.failed = []failedJob{{rom: rom(9, "X"), err: "boom"}}
 	if bar := idle.viewDownloadBar(); len(bar) != 1 || !strings.Contains(bar[0], "1 download failed") {
 		t.Fatalf("idle failed bar = %q", bar)
+	}
+}
+
+func TestConfirmQuitSetting(t *testing.T) {
+	m := testModel(100, 30)
+	m.confirmQuit = false
+	if _, cmd := m.handleKey(keyRune('q')); cmd == nil || m.quitting {
+		t.Fatal("confirm_quit = false and no downloads: q should quit right away")
+	}
+	m = testModel(100, 30)
+	m.confirmQuit = true
+	if _, cmd := m.handleKey(keyRune('q')); cmd != nil || !m.quitting {
+		t.Fatal("confirm_quit = true: q should ask first")
 	}
 }

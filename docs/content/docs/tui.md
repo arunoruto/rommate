@@ -42,7 +42,7 @@ Press `?` or **Select** to see these in the app. The footer always shows the act
 | Downloads: download next / retry all failed | `y` | Y |
 | Downloads: cancel, remove or dismiss | `x` | X |
 | Show or hide help | `?`, `F1` or `h` | Select |
-| Quit (press twice while downloading) | `q` or `Ctrl+C` | Start |
+| Quit (asks first, see `confirm_quit`) | `q` or `Ctrl+C` | Start |
 
 ## Controller setup
 

@@ -40,7 +40,7 @@ var helpSections = []struct {
 	}},
 	{"General", []binding{
 		{"Show / hide this help", "?  or  F1  or  h", "Select"},
-		{"Quit (twice while downloading)", "q  or  Ctrl+C", "Start"},
+		{"Quit (asks first)", "q  or  Ctrl+C", "Start"},
 	}},
 }
 

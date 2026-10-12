@@ -32,6 +32,8 @@ func (m *model) View() string {
 	}
 	var panels string
 	switch {
+	case m.quitting:
+		panels = m.viewQuit(m.width, panelH)
 	case m.help:
 		panels = m.viewHelp(m.width, panelH)
 	case m.width >= wideWidth:
@@ -99,6 +101,8 @@ func (m *model) viewFooter() string {
 	quit := hint{k("q", "Start"), "Quit"}
 	hints := []hint{{k("Enter", "A"), "Open"}, tabs, quit}
 	switch {
+	case m.quitting:
+		hints = []hint{{k("Enter", "A"), "Quit"}, {k("Esc", "B"), "Cancel"}}
 	case m.help:
 		hints = []hint{{k("Esc", "B"), "Close help"}}
 	case m.tab == tabDownloads:

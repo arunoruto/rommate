@@ -23,6 +23,7 @@ import (
 func Run(ctx context.Context, e *core.Engine, opts Options) error {
 	m := newModel(ctx, e)
 	m.input = defaultInputMode(opts)
+	m.confirmQuit = opts.ConfirmQuit
 	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithContext(ctx))
 	startGamepad(ctx, opts, p)
 	_, err := p.Run()
@@ -79,22 +80,23 @@ type model struct {
 	engine *core.Engine
 	host   string
 
-	tab       tab
-	screen    screen
-	platforms []core.PlatformInfo
-	roms      []core.RomInfo
-	platform  core.PlatformInfo
-	counts    map[string]int // downloaded games per platform slug
-	cursor    int
-	offset    int
-	loading   bool
-	err       error
-	confirmID int  // rom awaiting a second X press to confirm removal
-	quitArmed bool // q pressed once while downloads are running
-	help      bool
-	input     inputMode
-	helpTop   int                  // first visible help line when the help is scrolled
-	padSeen   map[string]time.Time // last controller press per key, see echoOfPad
+	tab         tab
+	screen      screen
+	platforms   []core.PlatformInfo
+	roms        []core.RomInfo
+	platform    core.PlatformInfo
+	counts      map[string]int // downloaded games per platform slug
+	cursor      int
+	offset      int
+	loading     bool
+	err         error
+	confirmID   int  // rom awaiting a second X press to confirm removal
+	quitting    bool // the "Quit rommate?" dialog is open
+	confirmQuit bool // ask before quitting even without running downloads
+	help        bool
+	input       inputMode
+	helpTop     int                  // first visible help line when the help is scrolled
+	padSeen     map[string]time.Time // last controller press per key, see echoOfPad
 
 	toast   toast
 	toastID int

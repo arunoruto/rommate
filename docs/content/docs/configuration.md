@@ -15,6 +15,7 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 # rom_dir = "/run/media/armada/Games/ROMs"   # default: taken from the profile
 # hints = "auto"         # footer hints: auto | keyboard | controller
 # gamepad = "auto"       # read controllers directly on Linux: auto | off
+# confirm_quit = true    # ask before quitting the TUI
 
 # Use a different folder for individual RomM platforms
 [folders]
@@ -32,6 +33,7 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 | `rom_dir` | from the profile | The folder that holds one sub-folder per platform. |
 | `hints` | `auto` | Footer hints in the TUI: `auto`, `keyboard` or `controller`. |
 | `gamepad` | `auto` | Read game controllers directly on Linux (`auto`) or only use keys (`off`). |
+| `confirm_quit` | `true` | Ask before quitting the TUI with Start or `q`. With running downloads it always asks. |
 | `[folders]` | | Per-platform folder overrides, keyed by RomM slug. |
 
 ## Profiles
@@ -58,6 +60,7 @@ These override the config file, which is handy for testing or for running rommat
 | `ROMMATE_ROM_DIR` | `rom_dir` |
 | `ROMMATE_HINTS` | `hints` |
 | `ROMMATE_GAMEPAD` | `gamepad` |
+| `ROMMATE_CONFIRM_QUIT` | `confirm_quit` (`true` / `false`) |
 
 ## Local server
 

@@ -65,7 +65,7 @@ func main() {
 func run(ctx context.Context, args []string) error {
 	if len(args) == 0 {
 		return withEngine(func(e *core.Engine, cfg *config.Config) error {
-			return tui.Run(ctx, e, tui.Options{Hints: cfg.Hints, Gamepad: cfg.Gamepad})
+			return tui.Run(ctx, e, tui.Options{Hints: cfg.Hints, Gamepad: cfg.Gamepad, ConfirmQuit: cfg.ConfirmQuit})
 		})
 	}
 	cmd, rest := args[0], args[1:]

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/BurntSushi/toml"
 
@@ -34,6 +35,9 @@ type Config struct {
 	// Gamepad is "auto" (default) to read controllers directly on Linux, or
 	// "off" to rely on keys only (e.g. a Steam Input keyboard layout).
 	Gamepad string `toml:"gamepad,omitempty"`
+	// ConfirmQuit asks before the TUI quits (Start / q). Running downloads
+	// always ask.
+	ConfirmQuit bool `toml:"confirm_quit"`
 }
 
 // Dir returns rommate's config directory: $XDG_CONFIG_HOME/rommate, else
@@ -74,7 +78,7 @@ func Path() (string, error) {
 // Load reads the config file and applies environment overrides. A missing
 // file is not an error; Validate reports what is missing.
 func Load() (*Config, error) {
-	cfg := &Config{Profile: folders.ProfileESDE}
+	cfg := &Config{Profile: folders.ProfileESDE, ConfirmQuit: true}
 	path, err := Path()
 	if err != nil {
 		return nil, err
@@ -99,6 +103,11 @@ func Load() (*Config, error) {
 	}
 	if v := os.Getenv("ROMMATE_GAMEPAD"); v != "" {
 		cfg.Gamepad = v
+	}
+	if v := os.Getenv("ROMMATE_CONFIRM_QUIT"); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			cfg.ConfirmQuit = b
+		}
 	}
 	if cfg.Profile == "" {
 		cfg.Profile = folders.ProfileESDE

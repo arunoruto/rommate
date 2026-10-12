@@ -134,6 +134,7 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 # rom_dir = "/run/media/armada/Games/ROMs"   # default: taken from the profile
 # hints = "auto"         # footer hints: auto | keyboard | controller
 # gamepad = "auto"       # read controllers directly on Linux: auto | off
+# confirm_quit = true    # ask before quitting the TUI
 
 # Override the folder for individual RomM platform slugs
 [folders]
@@ -179,7 +180,7 @@ Press `?` (or `F1`, `h`, or Select on a controller) inside the TUI to see all sh
 | Downloads: next / retry all   | `y`                         | Y                              |
 | Downloads: cancel / dismiss   | `x`                         | X                              |
 | Show / hide help              | `?`, `F1` or `h`            | Select → `F1`                  |
-| Quit (press twice while downloading) | `q` or `Ctrl+C`      | Start → `q`                    |
+| Quit (asks first, see `confirm_quit`) | `q` or `Ctrl+C`      | Start → `q`                    |
 
 ### CLI
 

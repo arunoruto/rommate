@@ -8,14 +8,14 @@ import (
 
 func (m *model) handleKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 	key := k.String()
+	if m.quitting {
+		return m.quitKey(key)
+	}
 	if m.help {
 		return m.helpKey(key)
 	}
 	if key != "x" {
 		m.confirmID = 0
-	}
-	if key != "q" {
-		m.quitArmed = false
 	}
 
 	switch key {
@@ -23,12 +23,10 @@ func (m *model) handleKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.cancelAll()
 		return m, tea.Quit
 	case "q":
-		if m.pendingCount() > 0 && !m.quitArmed {
-			m.quitArmed = true
-			return m, m.setToast(fmt.Sprintf("%d downloads in progress, press %s again to quit (they resume next time)",
-				m.pendingCount(), m.key("q", "Start")), toastBad)
+		if m.confirmQuit || m.pendingCount() > 0 {
+			m.quitting = true
+			return m, nil
 		}
-		m.cancelAll()
 		return m, tea.Quit
 	case "?", "f1", "h":
 		m.help = true
@@ -45,6 +43,18 @@ func (m *model) handleKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.downloadsKey(key)
 	}
 	return m.libraryKey(key)
+}
+
+// quitKey handles the "Quit rommate?" dialog: A/Enter (or q/Start again)
+// quits, anything else cancels.
+func (m *model) quitKey(key string) (tea.Model, tea.Cmd) {
+	switch key {
+	case "enter", "q", "ctrl+c":
+		m.cancelAll()
+		return m, tea.Quit
+	}
+	m.quitting = false
+	return m, nil
 }
 
 func (m *model) helpKey(key string) (tea.Model, tea.Cmd) {

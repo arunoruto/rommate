@@ -27,6 +27,8 @@ type Options struct {
 	Hints string
 	// Gamepad is "auto" (or empty) to read controllers directly, or "off".
 	Gamepad string
+	// ConfirmQuit asks before quitting. Running downloads always ask.
+	ConfirmQuit bool
 }
 
 // steamEnv lists variables Steam or gamescope set for launched programs.
