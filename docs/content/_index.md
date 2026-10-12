@@ -3,9 +3,7 @@ title: rommate
 layout: hextra-home
 ---
 
-<div class="hx:mt-4 hx:mb-6">
-<img src="images/logo.svg" alt="rommate logo" class="rm-hero-logo">
-</div>
+<div class="rm-hero" style="background-image: linear-gradient(90deg, rgba(22,22,30,.92) 0%, rgba(22,22,30,.6) 45%, rgba(22,22,30,0) 75%), url(images/hero.png);">
 
 {{< hextra/hero-badge link="https://github.com/arunoruto/rommate" >}}
   <div class="hx:w-2 hx:h-2 hx:rounded-full hx:bg-primary-400"></div>
@@ -32,6 +30,8 @@ layout: hextra-home
 
 <div class="hx:mb-12 hx:max-w-full">
 <code class="rm-install">curl -fsSL https://arunoruto.github.io/rommate/install.sh | sh</code>
+</div>
+
 </div>
 
 <div class="hx:mb-16">

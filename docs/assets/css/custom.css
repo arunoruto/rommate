@@ -79,3 +79,43 @@
 .rm-buttons {
   margin-bottom: 1.5rem;
 }
+
+/* Landing page: hero section on the Steam hero artwork. The artwork is dark,
+   so the section stays dark in both themes. */
+.rm-hero {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 1rem 0 3rem;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+  border-radius: 24px;
+  color: #ecebf6;
+  /* The image is set inline in content/_index.md so its path resolves
+     relative to the page. */
+  background-color: #16161e;
+  background-position: right center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: 0 30px 80px -40px rgba(123, 97, 255, 0.55);
+}
+.rm-hero h1 {
+  background-image: linear-gradient(180deg, #ffffff, #c9c7d9) !important;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.rm-hero h1 .rm-gradient {
+  background-image: linear-gradient(90deg, #7b61ff, #ff7ab8);
+}
+.rm-hero h3,
+.rm-hero p,
+.rm-hero .rm-install {
+  color: #c9c7d9 !important;
+}
+.rm-hero .rm-buttons a:last-child {
+  color: #ecebf6 !important;
+}
+@media (max-width: 640px) {
+  .rm-hero {
+    background-position: 70% center;
+  }
+}
