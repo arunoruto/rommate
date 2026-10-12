@@ -133,6 +133,7 @@ token   = "rmm_..."
 profile = "es-de"        # es-de | emudeck | retrodeck
 # rom_dir = "/run/media/armada/Games/ROMs"   # default: taken from the profile
 # hints = "auto"         # footer hints: auto | keyboard | controller
+# gamepad = "auto"       # read controllers directly on Linux: auto | off
 
 # Override the folder for individual RomM platform slugs
 [folders]
@@ -191,6 +192,7 @@ rommate status                    # what's on this device
 rommate remove 9                  # delete a downloaded game
 rommate mappings                  # platforms whose ES-DE folder differs from the RomM slug
 rommate config                    # effective configuration (never shows the token)
+rommate gamepad                   # controllers rommate can read, and how it reads each button (Linux)
 ```
 
 ### JSON output

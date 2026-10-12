@@ -46,8 +46,15 @@ Press `?` or **Select** to see these in the app. The footer always shows the act
 
 ## Controller setup
 
-Through Steam Input, a controller sends ordinary key presses, so rommate needs a controller layout that maps buttons
-to the keys above. Create a keyboard layout for the rommate shortcut in Steam with these bindings:
+On Linux, rommate reads controllers directly, so **no extra setup is needed**: started from Steam with the default
+gamepad layout (for example with the Decky plugin's **Open rommate** button), the D-pad, A/B/X/Y, L1/R1, Select and
+Start just work. Holding a direction on the D-pad repeats it. Your user needs read access to `/dev/input/event*`, which
+it has on SteamOS-style systems through the `input` group. Run `rommate gamepad` to see which controllers rommate finds
+and how it reads each button.
+
+If you prefer a Steam Input keyboard layout instead (or on macOS and Windows), map the buttons to these keys. rommate
+notices when a key arrives right after the same controller press and ignores the duplicate. To switch direct
+controller input off, set `gamepad = "off"`.
 
 | Button | Key |
 |---|---|
@@ -67,7 +74,7 @@ to the keys above. Create a keyboard layout for the rommate shortcut in Steam wi
 ## Keyboard or controller hints
 
 The footer shows either keyboard keys or controller buttons. With `hints = "auto"` (the default), rommate shows
-controller buttons when Steam started it, and keyboard keys in a normal terminal. Set `hints = "keyboard"` or
+controller buttons when Steam started it or as soon as you press a controller button, and keyboard keys otherwise. Set `hints = "keyboard"` or
 `hints = "controller"` in the [configuration](../configuration) to force one.
 
 ![The help screen listing every action with keyboard and controller bindings](/images/screenshots/help.png)

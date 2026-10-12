@@ -17,6 +17,7 @@ share ideas.
 - Keyboard or controller hints depending on how rommate was started
 - Releases for Linux (x86-64, ARM64), macOS (Apple Silicon) and Windows, an install script and this website
 - Local server address with automatic fallback and mDNS `.local` names on every system
+- Direct controller input on Linux: works with Steam's default gamepad layout, no key mapping needed
 
 ## Next: browsing and settings
 
@@ -35,7 +36,6 @@ share ideas.
 
 - [#7 Mod manager](https://github.com/arunoruto/rommate/issues/7) for emulators that support mods, linked by title ID
 - [#8 Decky plugin](https://github.com/arunoruto/rommate/issues/8) for Game Mode on the Steam Deck
-- [#9 Native gamepad input](https://github.com/arunoruto/rommate/issues/9) when started outside Steam
 - [#12 Other servers](https://github.com/arunoruto/rommate/issues/12) such as Retrom
 - [#13 Packages](https://github.com/arunoruto/rommate/issues/13) for nixpkgs, Flathub and the AUR
 

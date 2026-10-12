@@ -14,6 +14,7 @@ token   = "rmm_…"
 profile = "es-de"        # es-de | emudeck | retrodeck
 # rom_dir = "/run/media/armada/Games/ROMs"   # default: taken from the profile
 # hints = "auto"         # footer hints: auto | keyboard | controller
+# gamepad = "auto"       # read controllers directly on Linux: auto | off
 
 # Use a different folder for individual RomM platforms
 [folders]
@@ -30,6 +31,7 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 | `profile` | `es-de` | Which frontend's folder layout to use; see below. |
 | `rom_dir` | from the profile | The folder that holds one sub-folder per platform. |
 | `hints` | `auto` | Footer hints in the TUI: `auto`, `keyboard` or `controller`. |
+| `gamepad` | `auto` | Read game controllers directly on Linux (`auto`) or only use keys (`off`). |
 | `[folders]` | | Per-platform folder overrides, keyed by RomM slug. |
 
 ## Profiles
@@ -55,6 +57,7 @@ These override the config file, which is handy for testing or for running rommat
 | `ROMMATE_TOKEN` | `token` |
 | `ROMMATE_ROM_DIR` | `rom_dir` |
 | `ROMMATE_HINTS` | `hints` |
+| `ROMMATE_GAMEPAD` | `gamepad` |
 
 ## Local server
 
