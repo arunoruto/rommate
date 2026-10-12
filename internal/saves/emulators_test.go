@@ -149,3 +149,22 @@ func TestRegistryPicksHandlers(t *testing.T) {
 		t.Errorf("3ds without Azahar: %v", got)
 	}
 }
+
+func TestAzaharCustomStorageNeedsSwitch(t *testing.T) {
+	h := fakeHome(t)
+	custom := filepath.Join(h, "custom-sdmc")
+	_ = os.MkdirAll(custom, 0o755)
+	_ = os.MkdirAll(filepath.Join(h, ".local/share/azahar-emu/sdmc"), 0o755)
+	cfg := filepath.Join(h, ".config/azahar-emu/qt-config.ini")
+	write := func(on string) {
+		mkfile(t, cfg, "[Data%20Storage]\nsdmc_directory="+custom+"\nsdmc_directory\\default=false\nuse_custom_storage="+on+"\n")
+	}
+	write("false")
+	if a := newAzahar().(*azahar); a.sdmc != filepath.Join(h, ".local/share/azahar-emu/sdmc") {
+		t.Errorf("custom path used although use_custom_storage=false: %s", a.sdmc)
+	}
+	write("true")
+	if a := newAzahar().(*azahar); a.sdmc != custom {
+		t.Errorf("custom path ignored: %s", a.sdmc)
+	}
+}

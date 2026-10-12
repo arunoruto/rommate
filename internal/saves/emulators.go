@@ -252,7 +252,12 @@ type azahar struct{ sdmc string }
 func newAzahar() Handler {
 	custom := ""
 	for _, cfg := range []string{"~/.config/azahar-emu/qt-config.ini", "~/.var/app/org.azahar_emu.Azahar/config/azahar-emu/qt-config.ini"} {
-		if v := qtPath(expandHome(cfg), "Data%20Storage", "sdmc_directory"); v != "" {
+		cfg = expandHome(cfg)
+		// The custom paths only apply with use_custom_storage on.
+		if on, _ := configValue(cfg, "Data%20Storage", "use_custom_storage"); on != "true" {
+			continue
+		}
+		if v := qtPath(cfg, "Data%20Storage", "sdmc_directory"); v != "" {
 			custom = v
 			break
 		}
