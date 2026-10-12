@@ -33,6 +33,9 @@ type LocalSave struct {
 	Emulator string // handler id, stored on the server
 	Path     string // file, or folder for folder saves
 	IsDir    bool
+	// Prefix limits a folder save to the top-level entries starting with it
+	// (PPSSPP keeps several SAVEDATA folders per game, named by disc ID).
+	Prefix   string
 	FileName string // name to upload under (folders get .zip)
 }
 
@@ -187,6 +190,12 @@ func (e *Engine) Sync(ctx context.Context, games []Game, emit func(Event)) (Resu
 			if !isLocal || e.Handlers.For(g.Platform) == nil || op.SaveID == nil {
 				continue
 			}
+			// Saves from a different emulator may use another format.
+			if h := e.Handlers.For(g.Platform); op.Emulator != "" && op.Emulator != h.ID() {
+				emit(Event{Action: "skipped", RomID: g.RomID, Name: g.Name,
+					Detail: "the server copy was made with " + op.Emulator})
+				continue
+			}
 			err = e.download(ctx, g, en, op, deviceID, plan.SessionID)
 			if err == nil {
 				res.Downloaded++
@@ -244,7 +253,7 @@ func prepare(g Game, s LocalSave, tmp string) (*entry, error) {
 		if err != nil {
 			return nil, err
 		}
-		if err := ZipDir(s.Path, f); err != nil {
+		if err := ZipPrefix(s.Path, s.Prefix, f); err != nil {
 			f.Close()
 			return nil, err
 		}
@@ -256,7 +265,7 @@ func prepare(g Game, s LocalSave, tmp string) (*entry, error) {
 	if en.hash, err = Hash(en.file); err != nil {
 		return nil, err
 	}
-	if en.mtime, err = latestMTime(s.Path); err != nil {
+	if en.mtime, err = latestMTime(s.Path, s.Prefix); err != nil {
 		return nil, err
 	}
 	st, err := os.Stat(en.file)
@@ -267,7 +276,7 @@ func prepare(g Game, s LocalSave, tmp string) (*entry, error) {
 	return en, nil
 }
 
-func latestMTime(path string) (time.Time, error) {
+func latestMTime(path, prefix string) (time.Time, error) {
 	st, err := os.Stat(path)
 	if err != nil {
 		return time.Time{}, err
@@ -276,11 +285,21 @@ func latestMTime(path string) (time.Time, error) {
 		return st.ModTime(), nil
 	}
 	var latest time.Time
-	err = filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
-		if err == nil && info.ModTime().After(latest) {
+	err = filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, _ := filepath.Rel(path, p)
+		if rel != "." && !hasPrefix(filepath.ToSlash(rel), prefix) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if rel != "." && info.ModTime().After(latest) {
 			latest = info.ModTime()
 		}
-		return err
+		return nil
 	})
 	return latest, err
 }
@@ -395,15 +414,18 @@ func (e *Engine) restore(g Game, target LocalSave, body io.Reader, serverTime *t
 	if err := os.MkdirAll(filepath.Dir(target.Path), 0o755); err != nil {
 		return "", err
 	}
-	if target.IsDir {
+	switch {
+	case target.IsDir && target.Prefix != "":
+		err = UnzipPrefix(dl.Name(), target.Path, target.Prefix)
+	case target.IsDir:
 		err = UnzipDir(dl.Name(), target.Path)
-	} else {
+	default:
 		err = copyFileAtomic(dl.Name(), target.Path)
 	}
 	if err != nil {
 		return "", err
 	}
-	if serverTime != nil {
+	if serverTime != nil && target.Prefix == "" {
 		// Matching the server's time keeps timestamp-only servers from
 		// seeing a fresh local change.
 		_ = os.Chtimes(target.Path, *serverTime, *serverTime)
@@ -452,6 +474,11 @@ func (e *Engine) backup(g Game, s LocalSave) error {
 	if err != nil {
 		return err
 	}
+	if s.Prefix != "" {
+		if m, _ := filepath.Glob(filepath.Join(s.Path, s.Prefix+"*")); len(m) == 0 {
+			return nil // nothing of this game to back up yet
+		}
+	}
 	dir := e.BackupDir(g.RomID)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
@@ -463,7 +490,7 @@ func (e *Engine) backup(g Game, s LocalSave) error {
 		if err != nil {
 			return err
 		}
-		if err := ZipDir(s.Path, f); err != nil {
+		if err := ZipPrefix(s.Path, s.Prefix, f); err != nil {
 			f.Close()
 			return err
 		}
@@ -495,4 +522,101 @@ func pruneBackups(dir, fileName string) error {
 		mine = mine[1:]
 	}
 	return nil
+}
+
+// Status describes the save of one downloaded game.
+type Status struct {
+	RomID    int    `json:"rom_id"`
+	Name     string `json:"name"`
+	Platform string `json:"platform"`
+	Emulator string `json:"emulator,omitempty"`
+	Path     string `json:"path,omitempty"` // empty: no local save yet
+	Conflict bool   `json:"conflict"`
+	Problem  string `json:"problem,omitempty"`
+}
+
+// Status lists the local save state of games, without contacting the server.
+func (e *Engine) Status(games []Game) ([]Status, error) {
+	conflicts, err := e.Store.Conflicts()
+	if err != nil {
+		return nil, err
+	}
+	inConflict := map[int]bool{}
+	for _, c := range conflicts {
+		inConflict[c.RomID] = true
+	}
+	var out []Status
+	for _, g := range games {
+		st := Status{RomID: g.RomID, Name: g.Name, Platform: g.Platform, Conflict: inConflict[g.RomID]}
+		h := e.Handlers.For(g.Platform)
+		if h == nil {
+			st.Problem = "no supported emulator found for this platform"
+			out = append(out, st)
+			continue
+		}
+		st.Emulator = h.ID()
+		s, ok, err := h.Find(g)
+		switch {
+		case err != nil:
+			st.Problem = err.Error()
+		case ok:
+			st.Path = s.Path
+		}
+		out = append(out, st)
+	}
+	return out, nil
+}
+
+// Resolve settles a conflict: "local" uploads the local save over the
+// server's, "server" replaces the local save (after a backup).
+func (e *Engine) Resolve(ctx context.Context, g Game, keep string) error {
+	h := e.Handlers.For(g.Platform)
+	if h == nil {
+		return fmt.Errorf("no supported emulator for %s", g.Platform)
+	}
+	conflicts, err := e.Store.Conflicts()
+	if err != nil {
+		return err
+	}
+	var c *state.Conflict
+	for i := range conflicts {
+		if conflicts[i].RomID == g.RomID {
+			c = &conflicts[i]
+		}
+	}
+	if c == nil {
+		return fmt.Errorf("%s has no save conflict", g.Name)
+	}
+	deviceID, err := e.DeviceID(ctx)
+	if err != nil {
+		return err
+	}
+	switch keep {
+	case "local":
+		s, ok, err := h.Find(g)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("the local save of %s is gone; resolve with --keep server", g.Name)
+		}
+		tmp, err := os.MkdirTemp(e.DataDir, "resolve-")
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(tmp)
+		en, err := prepare(g, s, tmp)
+		if err != nil {
+			return err
+		}
+		return e.upload(ctx, en, deviceID, 0, true)
+	case "server":
+		op := romm.SyncOp{RomID: g.RomID, SaveID: &c.ServerSaveID, ServerUpdatedAt: &c.ServerUpdatedAt}
+		var en *entry
+		if s, ok, err := h.Find(g); err == nil && ok {
+			en = &entry{game: g, save: s}
+		}
+		return e.download(ctx, g, en, op, deviceID, 0)
+	}
+	return fmt.Errorf("keep must be local or server, not %q", keep)
 }

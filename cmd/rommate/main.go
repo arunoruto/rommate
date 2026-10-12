@@ -21,6 +21,7 @@ import (
 	"github.com/arunoruto/rommate/internal/folders"
 	"github.com/arunoruto/rommate/internal/gamepad"
 	"github.com/arunoruto/rommate/internal/romm"
+	"github.com/arunoruto/rommate/internal/saves"
 	"github.com/arunoruto/rommate/internal/state"
 	"github.com/arunoruto/rommate/internal/tui"
 )
@@ -46,6 +47,10 @@ Usage:
   rommate mappings                show RomM platforms whose ES-DE folder differs
   rommate config                  show the current configuration (never the token)
   rommate gamepad                 show detected controllers and test their buttons (Linux)
+  rommate saves                   show the save state of downloaded games
+  rommate saves sync              sync saves with RomM
+  rommate saves resolve <rom-id> --keep local|server
+                                  settle a save conflict
   rommate version                 print version information
 
 Every command accepts --json to print machine-readable output (JSON lines for
@@ -92,6 +97,8 @@ func run(ctx context.Context, args []string) error {
 		return cmdConfig(rest)
 	case "gamepad":
 		return cmdGamepad(ctx)
+	case "saves":
+		return cmdSaves(ctx, rest)
 	case "version", "--version", "-v":
 		fmt.Printf("rommate %s (commit %s, built %s)\n", version, commit, date)
 		return nil
@@ -572,4 +579,122 @@ func cmdGamepad(ctx context.Context) error {
 	})
 	<-ctx.Done()
 	return nil
+}
+
+// saveEngine builds the save sync engine for a core engine.
+func saveEngine(e *core.Engine) (*saves.Engine, []saves.Game, error) {
+	dataDir, err := config.DataDir()
+	if err != nil {
+		return nil, nil, err
+	}
+	entries, err := e.Store.All()
+	if err != nil {
+		return nil, nil, err
+	}
+	games := make([]saves.Game, 0, len(entries))
+	for _, en := range entries {
+		games = append(games, saves.Game{RomID: en.RomID, Platform: en.PlatformSlug, Name: en.Name, Path: en.Path})
+	}
+	return &saves.Engine{
+		Client: e.Client, Store: e.Store, Handlers: &saves.Detected{},
+		DataDir: dataDir, Version: version,
+	}, games, nil
+}
+
+func cmdSaves(ctx context.Context, args []string) error {
+	fs, asJSON := newFlags("saves")
+	keep := fs.String("keep", "", "for resolve: local or server")
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	sub := "status"
+	if len(pos) > 0 {
+		sub, pos = pos[0], pos[1:]
+	}
+	return withEngine(func(e *core.Engine, _ *config.Config) error {
+		se, games, err := saveEngine(e)
+		if err != nil {
+			return err
+		}
+		switch sub {
+		case "status":
+			sts, err := se.Status(games)
+			if err != nil {
+				return err
+			}
+			if *asJSON {
+				return printJSON(sts)
+			}
+			tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+			fmt.Fprintln(tw, "ID\tGAME\tEMULATOR\tSAVE")
+			for _, st := range sts {
+				save := "no save yet"
+				switch {
+				case st.Problem != "":
+					save = st.Problem
+				case st.Conflict:
+					save = "CONFLICT (rommate saves resolve " + strconv.Itoa(st.RomID) + " --keep local|server)"
+				case st.Path != "":
+					save = st.Path
+				}
+				fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n", st.RomID, st.Name, st.Emulator, save)
+			}
+			return tw.Flush()
+		case "sync":
+			enc := json.NewEncoder(os.Stdout)
+			emit := func(ev saves.Event) {
+				if *asJSON {
+					_ = enc.Encode(ev)
+					return
+				}
+				switch ev.Action {
+				case "upload":
+					fmt.Printf("↑ %s\n", ev.Name)
+				case "download":
+					fmt.Printf("↓ %s\n", ev.Name)
+				case "conflict":
+					fmt.Printf("! %s: conflict, resolve with `rommate saves resolve %d --keep local|server`\n", ev.Name, ev.RomID)
+				case "skipped":
+					fmt.Printf("· %s: skipped (%s)\n", ev.Name, ev.Detail)
+				case "error":
+					fmt.Fprintf(os.Stderr, "✗ %s: %s\n", ev.Name, ev.Detail)
+				}
+			}
+			res, err := se.Sync(ctx, games, emit)
+			if err != nil {
+				return err
+			}
+			if *asJSON {
+				return enc.Encode(map[string]any{"event": "result", "result": res})
+			}
+			fmt.Printf("Saves: %d uploaded, %d downloaded, %d in sync, %d conflicts, %d failed\n",
+				res.Uploaded, res.Downloaded, res.InSync, res.Conflicts, res.Failed)
+			if res.Failed > 0 {
+				return fmt.Errorf("%d saves failed to sync", res.Failed)
+			}
+			return nil
+		case "resolve":
+			if len(pos) != 1 || (*keep != "local" && *keep != "server") {
+				return errors.New("usage: rommate saves resolve <rom-id> --keep local|server")
+			}
+			id, err := strconv.Atoi(pos[0])
+			if err != nil {
+				return fmt.Errorf("not a rom id: %q", pos[0])
+			}
+			for _, g := range games {
+				if g.RomID == id {
+					if err := se.Resolve(ctx, g, *keep); err != nil {
+						return err
+					}
+					if !*asJSON {
+						fmt.Printf("Resolved %s: kept the %s save\n", g.Name, *keep)
+					}
+					return nil
+				}
+			}
+			return fmt.Errorf("rom %d is not downloaded on this device", id)
+		}
+		return fmt.Errorf("unknown saves command %q (want status, sync or resolve)", sub)
+	})
 }

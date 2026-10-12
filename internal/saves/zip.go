@@ -19,18 +19,36 @@ import (
 var zipEpoch = time.Date(1980, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // ZipDir writes a deterministic zip of dir's contents to w.
-func ZipDir(dir string, w io.Writer) error {
+func ZipDir(dir string, w io.Writer) error { return ZipPrefix(dir, "", w) }
+
+// hasPrefix reports whether a top-level entry belongs to a prefix save.
+func hasPrefix(rel, prefix string) bool {
+	if prefix == "" {
+		return true
+	}
+	top := strings.SplitN(rel, "/", 2)[0]
+	return strings.HasPrefix(top, prefix)
+}
+
+// ZipPrefix writes a deterministic zip of the entries in dir whose top-level
+// name starts with prefix ("" for all), e.g. a PSP game's SAVEDATA folders.
+func ZipPrefix(dir, prefix string, w io.Writer) error {
 	var files []string
 	err := filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
+		}
+		if rel, _ := filepath.Rel(dir, p); d.IsDir() && rel != "." && !hasPrefix(filepath.ToSlash(rel), prefix) {
+			return filepath.SkipDir
 		}
 		if d.Type().IsRegular() {
 			rel, err := filepath.Rel(dir, p)
 			if err != nil {
 				return err
 			}
-			files = append(files, filepath.ToSlash(rel))
+			if rel = filepath.ToSlash(rel); hasPrefix(rel, prefix) {
+				files = append(files, rel)
+			}
 		}
 		return nil
 	})
@@ -123,4 +141,47 @@ func extract(f *zip.File, dest string) error {
 		return err
 	}
 	return out.Close()
+}
+
+// UnzipPrefix replaces the top-level entries of dir that start with prefix
+// with the contents of the zip at src, leaving all other entries alone.
+func UnzipPrefix(src, dir, prefix string) error {
+	tmp := dir + ".rommate-new"
+	if err := os.RemoveAll(tmp); err != nil {
+		return err
+	}
+	if err := UnzipDir(src, tmp); err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmp)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	// Check every new entry belongs to the prefix before touching anything.
+	newEntries, err := os.ReadDir(tmp)
+	if err != nil {
+		return err
+	}
+	for _, e := range newEntries {
+		if !strings.HasPrefix(e.Name(), prefix) {
+			return fmt.Errorf("save zip contains %q outside %s*", e.Name(), prefix)
+		}
+	}
+	old, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	for _, e := range old {
+		if strings.HasPrefix(e.Name(), prefix) {
+			if err := os.RemoveAll(filepath.Join(dir, e.Name())); err != nil {
+				return err
+			}
+		}
+	}
+	for _, e := range newEntries {
+		if err := os.Rename(filepath.Join(tmp, e.Name()), filepath.Join(dir, e.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
 }

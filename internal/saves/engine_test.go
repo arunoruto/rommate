@@ -200,3 +200,35 @@ func TestNoOpWithMissedLocalChange(t *testing.T) {
 		t.Errorf("server changed too (409) should be a conflict: %+v", res)
 	}
 }
+
+func TestResolveConflict(t *testing.T) {
+	f := &fakeRomM{uploads: map[int]string{}, content: map[int]string{66: "server three"},
+		confirmed: map[int]string{}, conflict: map[int]bool{}}
+	e, dir := newTestEngine(t, f)
+	k := func(rom int) state.SaveKey { return state.SaveKey{RomID: rom, Slot: Slot, Emulator: "test-emu"} }
+	for _, rom := range []int{3, 4} {
+		_ = os.WriteFile(filepath.Join(dir, strconv.Itoa(rom)+".srm"), []byte("local"), 0o644)
+		_ = e.Store.PutConflict(state.Conflict{SaveKey: k(rom), ServerSaveID: 66, ServerUpdatedAt: time.Unix(1, 0)})
+	}
+	if err := e.Resolve(context.Background(), Game{RomID: 3, Name: "Three"}, "server"); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(dir, "3.srm")); string(b) != "server three" {
+		t.Errorf("keep server: local save = %q", b)
+	}
+	if bs, _ := os.ReadDir(e.BackupDir(3)); len(bs) != 1 {
+		t.Errorf("keep server should back up the local save, got %v", bs)
+	}
+	if err := e.Resolve(context.Background(), Game{RomID: 4, Name: "Four"}, "local"); err != nil {
+		t.Fatal(err)
+	}
+	if f.uploads[4] != "local" {
+		t.Errorf("keep local: uploaded %q", f.uploads[4])
+	}
+	if cs, _ := e.Store.Conflicts(); len(cs) != 0 {
+		t.Errorf("conflicts left: %+v", cs)
+	}
+	if err := e.Resolve(context.Background(), Game{RomID: 4, Name: "Four"}, "local"); err == nil {
+		t.Error("resolving a game without a conflict should fail")
+	}
+}
