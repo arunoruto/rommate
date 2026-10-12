@@ -14,13 +14,13 @@ import (
 
 // Entry is one downloaded ROM.
 type Entry struct {
-	RomID        int
-	PlatformSlug string
-	Name         string
+	RomID        int    `json:"rom_id"`
+	PlatformSlug string `json:"platform_slug"`
+	Name         string `json:"name"`
 	// Path is the ROM file, or its folder for multi-file ROMs.
-	Path         string
-	SizeBytes    int64
-	DownloadedAt time.Time
+	Path         string    `json:"path"`
+	SizeBytes    int64     `json:"size_bytes"`
+	DownloadedAt time.Time `json:"downloaded_at"`
 }
 
 // Store is the SQLite-backed state database.
