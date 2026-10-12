@@ -8,8 +8,9 @@ import "os"
 // With Steam Input, controller presses reach the terminal as ordinary key
 // presses, so the TUI cannot tell the two apart from the keys alone. Instead
 // it looks at how it was launched: Steam (Game Mode or a non-Steam shortcut)
-// means controller, a plain terminal means keyboard. A future evdev watcher
-// can switch modes at runtime by sending an inputModeMsg.
+// means controller, a plain terminal means keyboard. On Linux the TUI also
+// reads controllers directly (package gamepad); the first button press
+// switches to controller mode.
 type inputMode int
 
 const (
@@ -24,6 +25,8 @@ type inputModeMsg inputMode
 type Options struct {
 	// Hints is "auto" (or empty), "keyboard" or "controller".
 	Hints string
+	// Gamepad is "auto" (or empty) to read controllers directly, or "off".
+	Gamepad string
 }
 
 // steamEnv lists variables Steam or gamescope set for launched programs.

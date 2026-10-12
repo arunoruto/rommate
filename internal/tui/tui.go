@@ -16,13 +16,16 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/arunoruto/rommate/internal/core"
+	"github.com/arunoruto/rommate/internal/gamepad"
 )
 
 // Run starts the TUI.
 func Run(ctx context.Context, e *core.Engine, opts Options) error {
 	m := newModel(ctx, e)
 	m.input = defaultInputMode(opts)
-	_, err := tea.NewProgram(m, tea.WithAltScreen(), tea.WithContext(ctx)).Run()
+	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithContext(ctx))
+	startGamepad(ctx, opts, p)
+	_, err := p.Run()
 	if err == tea.ErrProgramKilled && ctx.Err() != nil {
 		return nil
 	}
@@ -90,7 +93,8 @@ type model struct {
 	quitArmed bool // q pressed once while downloads are running
 	help      bool
 	input     inputMode
-	helpTop   int // first visible help line when the help is scrolled
+	helpTop   int                  // first visible help line when the help is scrolled
+	padSeen   map[string]time.Time // last controller press per key, see echoOfPad
 
 	toast   toast
 	toastID int
@@ -220,7 +224,12 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.waitEvent
 	case jobDoneMsg:
 		return m, m.finishJob(msg)
+	case padMsg:
+		return m.handlePad(gamepad.Button(msg))
 	case tea.KeyMsg:
+		if m.echoOfPad(msg) {
+			return m, nil
+		}
 		return m.handleKey(msg)
 	}
 	return m, nil

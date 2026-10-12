@@ -31,6 +31,9 @@ type Config struct {
 	// Hints selects the TUI footer hints: auto (default), keyboard or controller.
 	// auto shows controller buttons when rommate was launched through Steam.
 	Hints string `toml:"hints,omitempty"`
+	// Gamepad is "auto" (default) to read controllers directly on Linux, or
+	// "off" to rely on keys only (e.g. a Steam Input keyboard layout).
+	Gamepad string `toml:"gamepad,omitempty"`
 }
 
 // Dir returns rommate's config directory: $XDG_CONFIG_HOME/rommate, else
@@ -94,6 +97,9 @@ func Load() (*Config, error) {
 	if v := os.Getenv("ROMMATE_HINTS"); v != "" {
 		cfg.Hints = v
 	}
+	if v := os.Getenv("ROMMATE_GAMEPAD"); v != "" {
+		cfg.Gamepad = v
+	}
 	if cfg.Profile == "" {
 		cfg.Profile = folders.ProfileESDE
 	}
@@ -118,6 +124,11 @@ func (c *Config) Validate() error {
 	case "", "auto", "keyboard", "controller":
 	default:
 		return fmt.Errorf("unknown hints %q (want auto, keyboard or controller)", c.Hints)
+	}
+	switch c.Gamepad {
+	case "", "auto", "off":
+	default:
+		return fmt.Errorf("unknown gamepad %q (want auto or off)", c.Gamepad)
 	}
 	return nil
 }

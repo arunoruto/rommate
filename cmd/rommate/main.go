@@ -19,6 +19,7 @@ import (
 	"github.com/arunoruto/rommate/internal/config"
 	"github.com/arunoruto/rommate/internal/core"
 	"github.com/arunoruto/rommate/internal/folders"
+	"github.com/arunoruto/rommate/internal/gamepad"
 	"github.com/arunoruto/rommate/internal/romm"
 	"github.com/arunoruto/rommate/internal/state"
 	"github.com/arunoruto/rommate/internal/tui"
@@ -44,6 +45,7 @@ Usage:
   rommate status                  show downloaded games
   rommate mappings                show RomM platforms whose ES-DE folder differs
   rommate config                  show the current configuration (never the token)
+  rommate gamepad                 show detected controllers and test their buttons (Linux)
   rommate version                 print version information
 
 Every command accepts --json to print machine-readable output (JSON lines for
@@ -63,14 +65,14 @@ func main() {
 func run(ctx context.Context, args []string) error {
 	if len(args) == 0 {
 		return withEngine(func(e *core.Engine, cfg *config.Config) error {
-			return tui.Run(ctx, e, tui.Options{Hints: cfg.Hints})
+			return tui.Run(ctx, e, tui.Options{Hints: cfg.Hints, Gamepad: cfg.Gamepad})
 		})
 	}
 	cmd, rest := args[0], args[1:]
 	switch cmd {
 	case "tui":
 		return withEngine(func(e *core.Engine, cfg *config.Config) error {
-			return tui.Run(ctx, e, tui.Options{Hints: cfg.Hints})
+			return tui.Run(ctx, e, tui.Options{Hints: cfg.Hints, Gamepad: cfg.Gamepad})
 		})
 	case "init":
 		return cmdInit(rest)
@@ -88,6 +90,8 @@ func run(ctx context.Context, args []string) error {
 		return cmdMappings(rest)
 	case "config":
 		return cmdConfig(rest)
+	case "gamepad":
+		return cmdGamepad(ctx)
 	case "version", "--version", "-v":
 		fmt.Printf("rommate %s (commit %s, built %s)\n", version, commit, date)
 		return nil
@@ -544,5 +548,28 @@ func cmdConfig(args []string) error {
 	if !info.Configured {
 		fmt.Printf("\nNot ready: %s\n", info.Problem)
 	}
+	return nil
+}
+
+// cmdGamepad lists controllers rommate can read and prints every recognised
+// button press, to check the mapping on a device. Press Start to quit.
+func cmdGamepad(ctx context.Context) error {
+	devices := gamepad.Find()
+	if len(devices) == 0 {
+		return errors.New("no readable game controller found (Linux only; the user needs read access to /dev/input/event*, usually via the input group)")
+	}
+	for _, d := range devices {
+		fmt.Printf("found %s (%s)\n", d.Name, d.Path)
+	}
+	fmt.Println("Press buttons to see how rommate reads them. Start quits.")
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	gamepad.Listen(ctx, devices, func(b gamepad.Button) {
+		fmt.Printf("  %s\n", b)
+		if b == gamepad.Start {
+			cancel()
+		}
+	})
+	<-ctx.Done()
 	return nil
 }

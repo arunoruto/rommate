@@ -3,6 +3,9 @@ package tui
 import (
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/arunoruto/rommate/internal/gamepad"
 )
 
 func env(kv map[string]string) func(string) string {
@@ -48,5 +51,25 @@ func TestFooterFollowsInputMode(t *testing.T) {
 	m.Update(inputModeMsg(inputController))
 	if f := footer(); !strings.Contains(f, " A ") || !strings.Contains(f, "Select") || strings.Contains(f, "Enter") {
 		t.Errorf("controller footer: %q", f)
+	}
+}
+
+func TestControllerPressMapsToKeysAndDropsSteamEcho(t *testing.T) {
+	m := testModel(100, 30)
+	m.input = inputKeyboard
+	m.handlePad(gamepad.R1) // next tab
+	if m.tab != tabDownloads || m.input != inputController {
+		t.Fatalf("R1: tab=%v input=%v", m.tab, m.input)
+	}
+	// The same press arriving again as "]" from a Steam keyboard layout is ignored.
+	m.Update(keyRune(']'))
+	if m.tab != tabDownloads {
+		t.Fatal("Steam echo of R1 switched tabs again")
+	}
+	// A deliberate key press later still works.
+	m.padSeen["]"] = time.Now().Add(-time.Second)
+	m.Update(keyRune(']'))
+	if m.tab != tabLibrary {
+		t.Fatal("keyboard ] after the echo window should switch tabs")
 	}
 }
