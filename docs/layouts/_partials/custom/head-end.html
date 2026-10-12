@@ -1,0 +1,8 @@
+{{- /* The site is dark only (theme.default: dark, no toggle). Drop a light
+   choice stored before the toggle was removed, so nobody is stuck on it. */ -}}
+<script>
+  try {
+    if (localStorage.getItem("color-theme") !== "dark") localStorage.removeItem("color-theme");
+  } catch (e) {}
+  setTheme("dark");
+</script>
