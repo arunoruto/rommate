@@ -19,6 +19,12 @@ just as well with a keyboard.
 : The queue: the running download with speed and time left, queued games in order, failed downloads with their error,
   and what finished recently. Cancelled downloads keep their partial file and resume next time.
 
+**Saves**
+: Every downloaded game with the state of its save: ✓ when it has one, **!** when it changed on this device and on
+  RomM since the last sync (a conflict), · when there is no save yet, and ? when no supported emulator is installed for
+  it. Press **Y** to sync now, or **A** on a conflict to choose which version to keep. See
+  [Save sync](../saves).
+
 While something downloads, a bar at the bottom shows its progress on every tab, like Steam does.
 
 ![The Downloads tab with one running, two queued, one failed and two finished downloads](/images/screenshots/downloads.png)
@@ -41,6 +47,9 @@ Press `?` or **Select** to see these in the app. The footer always shows the act
 | Downloads: retry a failed download | `Enter` | A |
 | Downloads: download next / retry all failed | `y` | Y |
 | Downloads: cancel, remove or dismiss | `x` | X |
+| Saves: sync now | `y` | Y |
+| Saves: resolve a conflict | `Enter` | A |
+| Conflict: keep this device / keep RomM | `x` / `y` | X / Y |
 | Show or hide help | `?`, `F1` or `h` | Select |
 | Quit (asks first, see `confirm_quit`) | `q` or `Ctrl+C` | Start |
 

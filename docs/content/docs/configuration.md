@@ -1,6 +1,6 @@
 ---
 title: Configuration
-weight: 4
+weight: 6
 ---
 
 rommate reads `~/.config/rommate/config.toml` on every system, including macOS and Windows. If
@@ -16,6 +16,7 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 # hints = "auto"         # footer hints: auto | keyboard | controller
 # gamepad = "auto"       # read controllers directly on Linux: auto | off
 # confirm_quit = true    # ask before quitting the TUI
+# auto_sync_saves = true # sync saves when the TUI starts and before it quits
 
 # Use a different folder for individual RomM platforms
 [folders]
@@ -33,6 +34,7 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 | `rom_dir` | from the profile | The folder that holds one sub-folder per platform. |
 | `hints` | `auto` | Footer hints in the TUI: `auto`, `keyboard` or `controller`. |
 | `gamepad` | `auto` | Read game controllers directly on Linux (`auto`) or only use keys (`off`). |
+| `auto_sync_saves` | `true` | Sync saves when the TUI starts and before it quits. See [Save sync](../saves). |
 | `confirm_quit` | `true` | Ask before quitting the TUI with Start or `q`. With running downloads it always asks. |
 | `[folders]` | | Per-platform folder overrides, keyed by RomM slug. |
 
@@ -60,6 +62,7 @@ These override the config file, which is handy for testing or for running rommat
 | `ROMMATE_ROM_DIR` | `rom_dir` |
 | `ROMMATE_HINTS` | `hints` |
 | `ROMMATE_GAMEPAD` | `gamepad` |
+| `ROMMATE_AUTO_SYNC_SAVES` | `auto_sync_saves` (`true` / `false`) |
 | `ROMMATE_CONFIRM_QUIT` | `confirm_quit` (`true` / `false`) |
 
 ## Local server

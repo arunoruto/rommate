@@ -20,6 +20,7 @@ It is a single binary with two faces:
   {{< card link="cli" title="The CLI" icon="terminal" subtitle="Every command, plus JSON output for scripts." >}}
   {{< card link="configuration" title="Configuration" icon="adjustments" subtitle="config.toml, frontend profiles and environment variables." >}}
   {{< card link="folders" title="Folder mapping" icon="folder-open" subtitle="Which RomM platform ends up in which folder." >}}
+  {{< card link="saves" title="Save sync" icon="refresh" subtitle="Keep emulator saves in sync with RomM across devices." >}}
   {{< card link="development" title="Development" icon="code" subtitle="Build from source, run the checks and cut a release." >}}
   {{< card link="roadmap" title="Roadmap" icon="map" subtitle="What's done and what comes next." >}}
 {{< /cards >}}

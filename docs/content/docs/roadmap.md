@@ -1,6 +1,6 @@
 ---
 title: Roadmap
-weight: 7
+weight: 8
 ---
 
 What's done and what comes next. Every planned item has a
@@ -18,6 +18,7 @@ share ideas.
 - Releases for Linux (x86-64, ARM64), macOS (Apple Silicon) and Windows, an install script and this website
 - Local server address with automatic fallback and mDNS `.local` names on every system
 - Direct controller input on Linux: works with Steam's default gamepad layout, no key mapping needed
+- Save sync for RetroArch, melonDS, Azahar, PPSSPP and the Eden family, with a Saves tab, conflict resolution and backups
 
 ## Next: browsing and settings
 
@@ -28,7 +29,7 @@ share ideas.
 ## Then: everything around the games
 
 - [#5 BIOS / firmware sync](https://github.com/arunoruto/rommate/issues/5)
-- [#6 Save sync](https://github.com/arunoruto/rommate/issues/6) with backups and conflict handling
+- [#6 Save sync](https://github.com/arunoruto/rommate/issues/6): more emulators (Dolphin, DuckStation, Cemu, PS2 memory cards) and syncing when a game closes in the Decky plugin
 - [#11 Multi-file games](https://github.com/arunoruto/rommate/issues/11): `.cue`/`.bin` checks and `.m3u` playlists
 - [#10 Cover art and gamelist.xml](https://github.com/arunoruto/rommate/issues/10) for ES-DE
 

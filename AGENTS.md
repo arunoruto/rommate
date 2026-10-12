@@ -61,6 +61,7 @@ cmd/rommate/        CLI entry point, subcommands, --json output, version info (s
 internal/core/      sync engine: downloads, resume, file locking (lock_unix.go / lock_windows.go), events
 internal/romm/      RomM REST API client
 internal/folders/   RomM slug → ES-DE folder mapping, frontend profiles (es-de, emudeck, retrodeck)
+internal/saves/     save sync: emulator handlers (emulators.go), title/disc ID readers (gameid.go), sync engine
 internal/state/     SQLite record of downloaded games (pure Go driver, no CGO)
 internal/config/    ~/.config/rommate/config.toml (on every OS, including macOS)
 internal/tui/       Bubble Tea TUI: tabs, download queue, views, help, input-mode detection

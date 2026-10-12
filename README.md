@@ -135,6 +135,7 @@ profile = "es-de"        # es-de | emudeck | retrodeck
 # hints = "auto"         # footer hints: auto | keyboard | controller
 # gamepad = "auto"       # read controllers directly on Linux: auto | off
 # confirm_quit = true    # ask before quitting the TUI
+# auto_sync_saves = true # sync saves when the TUI starts and before it quits
 
 # Override the folder for individual RomM platform slugs
 [folders]
@@ -167,7 +168,7 @@ Press `?` (or `F1`, `h`, or Select on a controller) inside the TUI to see all sh
 
 | Action                        | Keyboard                    | Controller (Steam Input → key) |
 |-------------------------------|-----------------------------|--------------------------------|
-| Switch tab (Library/Downloads)| `[` `]` or `Tab`            | L1 R1 → `[` `]`                |
+| Switch tab (Library/Downloads/Saves) | `[` `]` or `Tab`     | L1 R1 → `[` `]`                |
 | Move up / down                | `↑` `↓` or `k` `j`          | D-pad ↑ ↓ → `↑` `↓`            |
 | Previous / next page          | `←` `→` or `PgUp` `PgDn`    | D-pad ← → → `←` `→`            |
 | First / last entry            | `Home` / `End`              | –                              |
@@ -179,8 +180,10 @@ Press `?` (or `F1`, `h`, or Select on a controller) inside the TUI to see all sh
 | Downloads: retry failed       | `Enter`                     | A                              |
 | Downloads: next / retry all   | `y`                         | Y                              |
 | Downloads: cancel / dismiss   | `x`                         | X                              |
+| Saves: sync now               | `y`                         | Y                              |
+| Saves: resolve a conflict     | `Enter`, then `x` (keep device) / `y` (keep RomM) | A, then X / Y |
 | Show / hide help              | `?`, `F1` or `h`            | Select → `F1`                  |
-| Quit (asks first, see `confirm_quit`) | `q` or `Ctrl+C`      | Start → `q`                    |
+| Quit (asks first, see `confirm_quit`; syncs saves, see `auto_sync_saves`) | `q` or `Ctrl+C` | Start → `q` |
 
 ### CLI
 
@@ -194,6 +197,7 @@ rommate remove 9                  # delete a downloaded game
 rommate mappings                  # platforms whose ES-DE folder differs from the RomM slug
 rommate config                    # effective configuration (never shows the token)
 rommate gamepad                   # controllers rommate can read, and how it reads each button (Linux)
+rommate saves sync                # sync emulator saves with RomM (see the website's Save sync page)
 ```
 
 ### JSON output
@@ -264,7 +268,8 @@ docs/              website (Hugo + Hextra), deployed to GitHub Pages
 - [x] Releases, install script and website
 - [x] Local server address with mDNS `.local` support
 - [ ] Search, Collections and Settings tabs
-- [ ] BIOS / firmware sync and save sync
+- [x] Save sync (RetroArch, melonDS, Azahar, PPSSPP, Eden family) with conflict resolution
+- [ ] BIOS / firmware sync
 - [ ] Mod manager, Decky plugin, other servers such as Retrom
 
 The full roadmap lives on the [website](https://arunoruto.github.io/rommate/docs/roadmap/), and every item has an

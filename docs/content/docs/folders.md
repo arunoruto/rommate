@@ -1,6 +1,6 @@
 ---
 title: Folder mapping
-weight: 5
+weight: 4
 ---
 
 RomM and ES-DE do not always agree on platform names. RomM calls the Nintendo 3DS `3ds`, while ES-DE expects its
